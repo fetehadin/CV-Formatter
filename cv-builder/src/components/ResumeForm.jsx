@@ -43,6 +43,25 @@ export function ResumeForm({data, updateData}){
                     </div>
                 )}
             </div>
+
+            {/*Summary Section*/}
+            <div className="mb-4 border rounded shadow-sm bg-white">
+                <Button
+                    variant = "ghost"
+                    onClick = {()=>toggleSection("Summary")}
+                    className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold">
+                        Summary
+                        <span>{activeSection == "Summary"? "▼" : "▶"}</span>
+                </Button>
+                {activeSection == "Summary" && (
+                    <div className="p-2 flex flex-col gap-3 border-t">
+                        <textarea name="summary" value={data.summary || ""} onChange={handleChange} placeholder="Write a brief summary about yourself..." className="border p-2 rounded min-h-[120px]"/>
+                    </div>
+                )}      
+            </div>
+
+            
+
             
         </div>
     )

@@ -22,6 +22,13 @@ export function ResumePreview({ data }) {
                 {(data.linkedin || data.github) && data.email && <span>|</span>}
                 {data.email && <span>{data.email}</span>}
             </div>
+            {/* Tier 4: Summary */}
+            <div    className="w-full mt-8 text-left">
+                <h2 className="text-lg font-bold tracking-wide text-slate-900 uppercase">SUMMARY</h2>
+                <p className=" text-sm text-slate-800 mt-2 leading-relaxed text-justify">
+                    {data.summary || "Write a brief summary about yourself..."}
+                </p>    
+            </div>
 
         </div>
     );
