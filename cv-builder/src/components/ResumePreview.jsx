@@ -30,6 +30,76 @@ export function ResumePreview({ data }) {
                 </p>    
             </div>
 
+            {/* Tier 5: Education */}
+            <div className="w-full mt-6 text-left">
+            {(data.schoolname || data.program) && (
+                <div className="w-full mt-6 text-left">
+                    <h2 className="text-[1rem] font-bold tracking-wide text-blue-900 uppercase mb-2">
+                        EDUCATION
+                    </h2>
+
+                    <div className="flex flex-col gap-4">
+                        <div>
+                            {/* Top Row: School & Dates */}
+                            <div className="flex justify-between text-slate-900 font-bold italic text-[0.95rem]">
+                                <span>{data.schoolname}</span>
+                                <span>
+                                    {data.startDate} {data.startDate && data.endDate ? " – " : ""} {data.endDate}
+                                </span>
+                            </div>
+                            
+                            {/* Degree Row */}
+                            <div className="italic text-slate-900 text-[0.95rem]">
+                                {data.program}
+                            </div>
+                            
+                            {/* Bullet Points */}
+                            {data.eduDescription && (
+                                <div className="text-[0.9rem] text-slate-800 mt-1 pl-4 whitespace-pre-line">
+                                    {"★ " + data.eduDescription}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            </div>
+
+            {/* Tier 5: WORK EXPERIENCE */}
+            <div className="w-full mt-6 text-left">
+            {(data.company || data.profession) && (
+                <div className="w-full mt-6 text-left">
+                    <h2 className="text-[1rem] font-bold tracking-wide text-blue-900 uppercase mb-2">
+                        WORK EXPERIENCE
+                    </h2>
+
+                    <div className="flex flex-col gap-4">
+                        <div>
+                            {/* Top Row: experience & Dates */}
+                            <div className="flex justify-between text-slate-900 font-bold italic text-[0.95rem]">
+                                <span>{data.company}</span>
+                                <span>
+                                    {data.startDate} {data.startDate && data.endDate ? " – " : ""} {data.endDate}
+                                </span>
+                            </div>
+                            
+                            {/* Degree Row */}
+                            <div className="italic text-slate-900 text-[0.95rem]">
+                                {data.profession}
+                            </div>
+                            
+                            {/* Bullet Points */}
+                            {data.experienceDescription&& (
+                                <div className="text-[0.9rem] text-slate-800 mt-1 pl-4 whitespace-pre-line">
+                                    {"★ " + data.experienceDescription}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            </div>
         </div>
+        
     );
 }

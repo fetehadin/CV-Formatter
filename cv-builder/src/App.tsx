@@ -8,7 +8,7 @@ import {ResumePreview} from './components/ResumePreview'
 
 function App() {
 
-  const [resumeData, setResumeData] = useState({ fullname: "", email: "", country: "", phone: "", linkedin: "", github: "", summary: ""});
+  const [resumeData, setResumeData] = useState({ fullname: "", email: "", country: "", phone: "", linkedin: "", github: "", summary: "", Education: "" });
 
   return (
       <>
