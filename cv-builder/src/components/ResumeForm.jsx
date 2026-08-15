@@ -1,66 +1,63 @@
 import React from "react";
-import {Button} from "./ui/button";
+import { Button } from "./ui/button";
 
-export function ResumeForm({data, updateData}){
+export function ResumeForm({ data, updateData }) {
     
-    const [activeSection, setActiveSection] = React.useState("personal")
+    const [activeSection, setActiveSection] = React.useState("personal");
 
     const handleChange = (e) => {
-        const {name, value} = e.target;
-
-        updateData((prevData)=>({
+        const { name, value } = e.target;
+        updateData((prevData) => ({
             ...prevData,
-            [name]: e.target.value,
-            // email: e.target.value
-        }))
-    }
+            [name]: value,
+        }));
+    };
 
-    const toggleSection = (section)=>{
-        setActiveSection(activeSection == section ? "" : section)
-    }
+    const toggleSection = (section) => {
+        setActiveSection(activeSection === section ? "" : section);
+    };
 
-
-    return(
-
-        <div className="w-1/2 p-4 h-screen overflow-y-auto bg-gray-50 border-r ">
-            {/* Section Personal info */}
+    return (
+        <div className="w-1/2 p-4 h-screen overflow-y-auto bg-gray-50 border-r">
+            
+            {/* Section: Personal Info */}
             <div className="mb-4 border rounded shadow-sm bg-white">
                 <Button 
-                    variant = "ghost"
-                    onClick={()=>toggleSection("personal")} 
+                    variant="ghost"
+                    onClick={() => toggleSection("personal")} 
                     className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold">
                         Personal Information
-                        <span>{activeSection == "personal"? "▼" : "▶"}</span>
+                        <span>{activeSection === "personal" ? "▼" : "▶"}</span>
                 </Button>
-                {activeSection == "personal" && (
+                {activeSection === "personal" && (
                     <div className="p-4 flex flex-col gap-3 border-t">
-                        <input type="text" name="fullname" value={data.fullname || ""} onChange={handleChange} placeholder="Enter Full Name"  className="border p-2"/>
-                        <input type="email" name="email" value={data.email||""} onChange={handleChange} placeholder="Enter your Email" className="border p-1" />
-                        <input type="text" name="country" value={data.country || ""} onChange={handleChange} placeholder="City, Country"/>
-                        <input type="number" name="phone" value={data.phone || ""} onChange={handleChange} placeholder="+2519999999" />
-                        <input type="text" name="linkedin" value={data.linkedin||""} onChange={handleChange} placeholder="Linkedin"/>
-                        <input type="text" name="github" value={data.github||""} onChange={handleChange} placeholder="github"/>  
+                        <input type="text" name="fullname" value={data.fullname || ""} onChange={handleChange} placeholder="Enter Full Name" className="border p-2 rounded w-full"/>
+                        <input type="email" name="email" value={data.email || ""} onChange={handleChange} placeholder="Enter your Email" className="border p-2 rounded w-full" />
+                        <input type="text" name="country" value={data.country || ""} onChange={handleChange} placeholder="City, Country" className="border p-2 rounded w-full"/>
+                        <input type="tel" name="phone" value={data.phone || ""} onChange={handleChange} placeholder="Enter your phone number" className="border p-2 rounded w-full"/>
+                        <input type="text" name="linkedin" value={data.linkedin || ""} onChange={handleChange} placeholder="LinkedIn URL" className="border p-2 rounded w-full"/>
+                        <input type="text" name="github" value={data.github || ""} onChange={handleChange} placeholder="GitHub URL" className="border p-2 rounded w-full"/>  
                     </div>
                 )}
             </div>
 
-            {/*Summary Section*/}
+            {/* Section: Summary */}
             <div className="mb-4 border rounded shadow-sm bg-white">
                 <Button
-                    variant = "ghost"
-                    onClick = {()=>toggleSection("Summary")}
+                    variant="ghost"
+                    onClick={() => toggleSection("Summary")}
                     className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold">
                         Summary
-                        <span>{activeSection == "Summary"? "▼" : "▶"}</span>
+                        <span>{activeSection === "Summary" ? "▼" : "▶"}</span>
                 </Button>
-                {activeSection == "Summary" && (
-                    <div className="p-2 flex flex-col gap-3 border-t">
-                        <textarea name="summary" value={data.summary || ""} onChange={handleChange} placeholder="Write a brief summary about yourself..." className="border p-2 rounded min-h-[120px]"/>
+                {activeSection === "Summary" && (
+                    <div className="p-4 flex flex-col gap-3 border-t">
+                        <textarea name="summary" value={data.summary || ""} onChange={handleChange} placeholder="Write a brief summary about yourself..." className="border p-2 rounded min-h-[120px] w-full"/>
                     </div>
                 )}      
             </div>
 
-            {/* Education Section */}
+            {/* Section: Education */}
             <div className="mb-4 border rounded shadow-sm bg-white">
                 <Button
                     variant="ghost"
@@ -77,23 +74,21 @@ export function ResumeForm({data, updateData}){
                             value={data.schoolname || ""} 
                             onChange={handleChange} 
                             placeholder="Enter School Name"  
-                            className="border p-2 rounded"
+                            className="border p-2 rounded w-full"
                         />
                         <div className="flex gap-2">
                             <input 
                                 type="date" 
-                                name="startDate" 
-                                value={data.startDate || ""} 
+                                name="eduStartDate" 
+                                value={data.eduStartDate || ""} 
                                 onChange={handleChange} 
-                                placeholder="Start Date (e.g. 2024)"  
                                 className="border p-2 rounded w-1/2"
                             />
                             <input 
                                 type="date" 
-                                name="endDate" 
-                                value={data.endDate || ""} 
+                                name="eduEndDate" 
+                                value={data.eduEndDate || "Present"} 
                                 onChange={handleChange} 
-                                placeholder="End Date (e.g. Present)"  
                                 className="border p-2 rounded w-1/2"
                             />
                         </div>
@@ -103,19 +98,20 @@ export function ResumeForm({data, updateData}){
                             value={data.program || ""} 
                             onChange={handleChange} 
                             placeholder="Degree or Program"
-                            className="border p-2 rounded"
+                            className="border p-2 rounded w-full"
                         />
                         <textarea 
                             name="eduDescription" 
                             value={data.eduDescription || ""} 
                             onChange={handleChange} 
                             placeholder="- Developed core competencies..."
-                            className="border p-2 rounded min-h-[100px]"
+                            className="border p-2 rounded min-h-[100px] w-full"
                         />
                     </div>
                 )}
             </div>
-            {/* WORK EXPERIENCE Section */}
+
+            {/* Section: Work Experience */}
             <div className="mb-4 border rounded shadow-sm bg-white">
                 <Button
                     variant="ghost"
@@ -132,23 +128,21 @@ export function ResumeForm({data, updateData}){
                             value={data.company || ""} 
                             onChange={handleChange} 
                             placeholder="Enter Company Name"  
-                            className="border p-2 rounded"
+                            className="border p-2 rounded w-full"
                         />
                         <div className="flex gap-2">
                             <input 
                                 type="date" 
-                                name="startDate" 
+                                name="workStartDate" 
                                 value={data.startDate || ""} 
                                 onChange={handleChange} 
-                                placeholder="Start Date (e.g. 2024)"  
                                 className="border p-2 rounded w-1/2"
                             />
                             <input 
                                 type="date" 
-                                name="endDate" 
-                                value={data.endDate || ""} 
+                                name="workEndDate" 
+                                value={data.endDate || "Present"} 
                                 onChange={handleChange} 
-                                placeholder="End Date (e.g. Present)"  
                                 className="border p-2 rounded w-1/2"
                             />
                         </div>
@@ -157,21 +151,42 @@ export function ResumeForm({data, updateData}){
                             name="profession"  
                             value={data.profession || ""} 
                             onChange={handleChange} 
-                            placeholder="Profession"
-                            className="border p-2 rounded"
+                            placeholder="Profession / Job Title"
+                            className="border p-2 rounded w-full"
                         />
                         <textarea 
                             name="experienceDescription" 
-                            value={data.eduDescription || ""} 
+                            value={data.experienceDescription || ""} 
                             onChange={handleChange} 
-                            placeholder="- Developed core competencies..."
-                            className="border p-2 rounded min-h-[100px]"
+                            placeholder="- Managed team of 5 engineers..."
+                            className="border p-2 rounded min-h-[100px] w-full"
                         />
                     </div>
                 )}
             </div>
 
+            {/* Section: Skills */}
+            <div className="mb-4 border rounded shadow-sm bg-white">
+                <Button
+                    variant="ghost"
+                    onClick={() => toggleSection("Skills")}
+                    className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold">
+                        Skills
+                        <span>{activeSection === "Skills" ? "▼" : "▶"}</span>
+                </Button>
+                {activeSection === "Skills" && (
+                    <div className="p-4 flex flex-col gap-3 border-t">
+                        <textarea 
+                            name="skills" 
+                            value={data.skills || ""} 
+                            onChange={handleChange} 
+                            placeholder="e.g. JavaScript, React, Node.js (comma separated or bulleted)..."
+                            className="border p-2 rounded min-h-[100px] w-full"
+                        />
+                    </div>
+                )}
+            </div>
             
         </div>
-    )
-};
+    );
+}
