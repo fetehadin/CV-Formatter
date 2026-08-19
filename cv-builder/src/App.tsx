@@ -16,19 +16,33 @@ function App() {
     // Summary
     summary: "", 
     
-    // Education
-    schoolname: "",
-    eduStartDate: "",
-    eduEndDate: "",
-    program: "",
-    eduDescription: "",
+    // Education Array (One empty block ready for the user)
+    education: [
+      {
+        id: crypto.randomUUID(),
+        schoolname: "",
+        eduStartMonth: "",
+        eduStartYear: "",
+        eduEndMonth: "",
+        eduEndYear: "",
+        program: "",
+        eduDescription: ""
+      }
+    ],
 
-    // Work Experience
-    company: "",
-    workStartDate: "",
-    workEndDate: "",
-    profession: "",
-    experienceDescription: "",
+    // Work Experience Array (One empty block ready for the user)
+    experience: [
+      {
+        id: crypto.randomUUID(),
+        company: "",
+        workStartMonth: "",
+        workStartYear: "",
+        workEndMonth: "",
+        workEndYear: "",
+        profession: "",
+        experienceDescription: ""
+      }
+    ],
 
     // Skills
     skills: "" 

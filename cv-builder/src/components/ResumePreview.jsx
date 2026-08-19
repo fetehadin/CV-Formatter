@@ -1,4 +1,9 @@
 export function ResumePreview({ data }) { 
+    
+    // Safety checks: only render sections if the user actually typed something in the first array item
+    const hasEducation = data.education && data.education.some(edu => edu.schoolname || edu.program);
+    const hasExperience = data.experience && data.experience.some(exp => exp.company || exp.profession);
+
     return (
         <div className="w-1/2 p-8 bg-white flex flex-col items-center text-center overflow-y-auto h-screen">
             
@@ -24,91 +29,83 @@ export function ResumePreview({ data }) {
             </div>
 
             {/* Tier 4: Summary */}
-            <div className="w-full mt-8 text-left">
-                <h2 className="text-lg font-bold tracking-wide text-slate-900 uppercase">SUMMARY</h2>
-                <p className="text-sm text-slate-800 mt-2 leading-relaxed text-justify">
-                    {data.summary || "Write a brief summary about yourself..."}
-                </p>    
-            </div>
+            {data.summary && (
+                <div className="w-full mt-8 text-left">
+                    <h2 className="text-[1rem] font-bold tracking-wide text-blue-900 uppercase mb-2">SUMMARY</h2>
+                    <p className="text-sm text-slate-800 mt-2 leading-relaxed text-justify">
+                        {data.summary}
+                    </p>    
+                </div>
+            )}
 
-            {/* Tier 5: Education */}
-            {(data.schoolname || data.program) && (
+            {/* Tier 5: Education ARRAY */}
+            {hasEducation && (
                 <div className="w-full mt-6 text-left">
                     <h2 className="text-[1rem] font-bold tracking-wide text-blue-900 uppercase mb-2">
                         EDUCATION
                     </h2>
-
                     <div className="flex flex-col gap-4">
-                        <div>
-                            {/* Top Row: School & Dates */}
-                            <div className="flex justify-between text-slate-900 font-bold italic text-[0.95rem]">
-                                <span>{data.schoolname}</span>
-                                <span>
-                                    {data.eduStartDate} {data.eduStartDate && data.eduEndDate ? "  –  " : ""} {data.eduEndDate}
-                                </span>
-                            </div>
-                            
-                            {/* Degree Row */}
-                            <div className="italic text-slate-900 text-[0.95rem]">
-                                {data.program}
-                            </div>
-                            
-                            {/* Bullet Points - SAFE RENDER */}
-                            {data.eduDescription && (
-                                <ul className="text-[0.9rem] text-slate-800 mt-1 flex flex-col gap-1">
-                                    {data.eduDescription
-                                        .split('\n')
-                                        .filter(line => line.trim() !== '')
-                                        .map((line, index) => (
-                                            <li key={index} className="flex items-start">
-                                                <span className="mr-2">-</span>
-                                                <span>{line}</span>
-                                            </li>
-                                        ))}
-                                </ul>
-                            )}
-                        </div>
+                        {data.education.map((edu, index) => (
+                            (edu.schoolname || edu.program) && (
+                                <div key={edu.id || index}>
+                                    <div className="flex justify-between text-slate-900 font-bold italic text-[0.95rem]">
+                                        <span>{edu.schoolname}</span>
+                                        <span>
+                                            {edu.eduStartMonth} {edu.eduStartYear} {(edu.eduStartMonth || edu.eduStartYear) && (edu.eduEndMonth || edu.eduEndYear) ? "  –  " : ""} {edu.eduEndMonth} {edu.eduEndYear}
+                                        </span>
+                                    </div>
+                                    <div className="italic text-slate-900 text-[0.95rem]">
+                                        {edu.program}
+                                    </div>
+                                    {edu.eduDescription && (
+                                        <ul className="text-[0.9rem] text-slate-800 mt-1 flex flex-col gap-1">
+                                            {edu.eduDescription.split('\n').filter(line => line.trim() !== '').map((line, i) => (
+                                                <li key={i} className="flex items-start">
+                                                    <span className="mr-2">★</span>
+                                                    <span>{line}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            )
+                        ))}
                     </div>
                 </div>
             )}
 
-            {/* Tier 6: WORK EXPERIENCE */}
-            {(data.company || data.profession) && (
+            {/* Tier 6: WORK EXPERIENCE ARRAY */}
+            {hasExperience && (
                 <div className="w-full mt-6 text-left">
                     <h2 className="text-[1rem] font-bold tracking-wide text-blue-900 uppercase mb-2">
                         WORK EXPERIENCE
                     </h2>
-
                     <div className="flex flex-col gap-4">
-                        <div>
-                            {/* Top Row: experience & Dates */}
-                            <div className="flex justify-between text-slate-900 font-bold italic text-[0.95rem]">
-                                <span>{data.company}</span>
-                                <span>
-                                    {data.workStartDate} {data.workStartDate && data.workEndDate ? "  –  " : ""} {data.workEndDate}
-                                </span>
-                            </div>
-                            
-                            {/* Profession Row */}
-                            <div className="italic text-slate-900 text-[0.95rem]">
-                                {data.profession}
-                            </div>
-                            
-                            {/* Bullet Points - SAFE RENDER */}
-                            {data.experienceDescription && (
-                                <ul className="text-[0.9rem] text-slate-800 mt-1 flex flex-col gap-1">
-                                    {data.experienceDescription
-                                        .split('\n')
-                                        .filter(line => line.trim() !== '')
-                                        .map((line, index) => (
-                                            <li key={index} className="flex items-start">
-                                                <span className="mr-2">-</span>
-                                                <span>{line}</span>
-                                            </li>
-                                        ))}
-                                </ul>
-                            )}
-                        </div>
+                        {data.experience.map((exp, index) => (
+                            (exp.company || exp.profession) && (
+                                <div key={exp.id || index}>
+                                    <div className="flex justify-between text-slate-900 font-bold italic text-[0.95rem]">
+                                        <span>{exp.company}</span>
+                                        <span>
+                                            {exp.workStartMonth} {exp.workStartYear} {(exp.workStartMonth || exp.workStartYear) && (exp.workEndMonth || exp.workEndYear) ? "  –  " : ""} {exp.workEndMonth} {exp.workEndYear}
+                                        </span>
+                                    </div>
+                                    <div className="italic text-slate-900 text-[0.95rem]">
+                                        {exp.profession}
+                                    </div>
+                                    {exp.experienceDescription && (
+                                        <ul className="text-[0.9rem] text-slate-800 mt-1 flex flex-col gap-1">
+                                            {exp.experienceDescription.split('\n').filter(line => line.trim() !== '').map((line, i) => (
+                                                <li key={i} className="flex items-start">
+                                                    <span className="mr-2">★</span>
+                                                    <span>{line}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            )
+                        ))}
                     </div>
                 </div>
             )}
