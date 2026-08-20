@@ -8,6 +8,7 @@
     size: A4 portrait;
   }
   
+  
   body {
     background-color: white !important;
     /* Forces Tailwind background colors to print */
@@ -29,7 +30,10 @@
     padding: 0 !important;
     margin: 0 !important;
   }
-
+  .origin-top {
+      transform: none !important;
+      margin-bottom: 0 !important;
+    }
   /* Removes the shadow from the paper in the PDF */
   .print-no-shadow {
     box-shadow: none !important;
