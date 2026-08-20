@@ -110,10 +110,13 @@ export function ResumePreview({ data }) {
             )}
             
             {/* SKILLS - Flattened and professionalized to match the target layout */}
+            {/* SKILLS - Strict Grid Layout */}
             {data.skills && (
                 <div className="w-full text-left">
-                    <h2 className="text-[14px] font-bold text-[#1E3A8A] uppercase mb-2">SKILLS</h2>
-                    <div className="flex flex-wrap gap-1.5">
+                    <h2 className="text-[14px] font-bold text-[#1E3A8A] uppercase mb-3">SKILLS</h2>
+                    
+                    {/* CRITICAL FIX: grid-cols-4 forces exactly 4 items per line. gap-3 adds perfect breathing room. */}
+                    <div className="grid grid-cols-4 gap-3">
                         {data.skills
                             .split(/[,\n]+/) 
                             .map((skill) => skill.trim()) 
@@ -121,7 +124,8 @@ export function ResumePreview({ data }) {
                             .map((skill, index) => (
                                 <span 
                                     key={index} 
-                                    className="bg-gray-100 text-gray-800 border border-gray-300 px-2 py-0.5 text-[12px] font-bold rounded-sm print:border-gray-400"
+                                    // Added 'text-center' for alignment and 'truncate' so long words don't break the grid
+                                    className="bg-gray-100 text-gray-800 border border-gray-300 px-3 py-1.5 text-[12px] font-bold rounded-sm print:border-gray-400 text-center truncate shadow-sm print:shadow-none"
                                 >
                                     {skill}
                                 </span>
