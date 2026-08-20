@@ -1,32 +1,38 @@
-# React + TypeScript + Vite
+# CV-Formatter
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A strict, high-performance React application designed to transform unstructured resume data into a professional, ATS-optimized classic engineering CV. Instead of a free-form builder, this tool acts as a rigid schema that forces data into a highly optimized, deterministic A4 blueprint.
 
-Currently, two official plugins are available:
+**Live Demo:** https://cv-formatter-two.vercel.app/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
+- **Fluid Split-Pane Workspace:** Draggable editing and preview panes built for responsive desktop and mobile views.
+- **Dynamic Auto-Scaling Preview:** Real-time observer calculations scale the A4 document to fit any screen without breaking text wrapping.
+- **Native PDF Export:** CSS Paged Media rules configured for pixel-perfect, exact-A4 printing directly from the browser.
+- **ATS-Optimized Layout:** Uses standard sans-serif typography, precise grid alignment for skills, and a clean DOM structure for parsing engines.
 
-## React Compiler
+## Tech Stack
+- React
+- Vite
+- Tailwind CSS
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Future Roadmap
+Currently, this project operates as a strict data formatter. The long-term vision is to expand it into a comprehensive open-source CV maker, including:
+- **Resume Analysis Engine:** Implementing content evaluation to score keyword density, impact phrasing, and overall ATS readability.
+- **Modular Architecture:** Adding the ability to safely swap between multiple industry-standard templates without breaking data structure.
+- **Data Portability:** Supporting raw JSON schema imports and exports.
 
-## Expanding the Oxlint configuration
+## Local Development
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+```bash
+# Clone the repository
+git clone https://github.com/fetehadin/CV-Formatter.git
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+# Navigate into the directory
+cd CV-Formatter
+
+# Install dependencies (uses pnpm based on project lockfile)
+pnpm install
+
+# Start the development server
+pnpm run dev
 ```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.

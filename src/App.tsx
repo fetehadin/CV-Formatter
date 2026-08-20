@@ -57,7 +57,7 @@ function App() {
           
           {/* TOP NAVIGATION BAR */}
           <div className="w-full bg-white shadow-sm p-4 flex justify-between items-center z-10 border-b hide-on-print">
-              <h1 className="font-bold text-xl text-slate-800 tracking-wider">CV BUILDER</h1>
+              <h1 className="font-bold text-xl text-slate-800 tracking-wider">CV FORMATTER</h1>
               <div className="flex gap-4">
                   {isEditMode ? (
                       <button onClick={() => setIsEditMode(false)} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded shadow transition-all">
