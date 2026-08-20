@@ -2,75 +2,52 @@ import React from "react";
 import { Button } from "./ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
-// --- CUSTOM HELPER COMPONENT ---
+// --- CUSTOM INPUT COMPONENT (Stretches to fill space) ---
+function FormInput({ label, name, type = "text", value, onChange, placeholder, className = "" }) {
+    return (
+        <div className={`flex flex-col gap-1.5 w-full ${className}`}>
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-1">{label}</label>
+            <input 
+                type={type} name={name} value={value} onChange={onChange} placeholder={placeholder} 
+                className="border border-slate-300 p-2.5 rounded-md w-full text-sm text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all"
+            />
+        </div>
+    );
+}
+
+// --- STRICT DATE PICKER ---
 function MonthYearPicker({ monthValue, yearValue, onMonthChange, onYearChange, isEndDate, minAllowedYear }) {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     const handleYearInput = (e) => {
-        let val = e.target.value;
-
-        // 1. Strip everything except numbers
-        val = val.replace(/\D/g, '');
-        
-        // 2. Prevent typing more than 4 digits
+        let val = e.target.value.replace(/\D/g, '');
         if (val.length > 4) val = val.slice(0, 4);
-
-        // 3. Only run logic checks when they finish typing 4 digits
         if (val.length === 4) {
             let num = parseInt(val, 10);
-            
-            // Boundary checks
             if (num > 2100) val = "2100";
             if (num < 1900) val = "1900";
-
-            // Start Date <= End Date logic
             if (minAllowedYear && minAllowedYear !== "Present") {
-                const minYearNum = parseInt(minAllowedYear, 10);
-                if (num < minYearNum) {
-                    val = minAllowedYear; // Auto-correct to match start year
-                }
+                if (num < parseInt(minAllowedYear, 10)) val = minAllowedYear;
             }
         }
-        
-        // Update the state
         onYearChange(val);
     };
 
     return (
         <div className="flex flex-col gap-1 w-full">
-            <div className="flex gap-2 w-full">
-                {/* Month Dropdown */}
+            <div className="flex flex-wrap gap-2 w-full">
                 <Select value={monthValue === "Present" ? "" : (monthValue || "")} onValueChange={onMonthChange}>
-                    <SelectTrigger className="bg-white w-1/2">
-                        <SelectValue placeholder="Month" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {months.map(m => (
-                            <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
-                    </SelectContent>
+                    <SelectTrigger className="bg-white flex-1 min-w-[90px]"><SelectValue placeholder="Month" /></SelectTrigger>
+                    <SelectContent>{months.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                 </Select>
-                
-                {/* STRICT Year Number Input */}
                 <input 
-                    type="text" // Using text to bypass default HTML number scrolling bugs
-                    value={yearValue === "Present" ? "" : (yearValue || "")}
-                    onChange={handleYearInput}
-                    placeholder="YYYY"
-                    className="border p-2 rounded w-1/2 bg-white text-sm"
+                    type="text" value={yearValue === "Present" ? "" : (yearValue || "")}
+                    onChange={handleYearInput} placeholder="YYYY"
+                    className="border border-slate-300 p-2 rounded-md flex-1 min-w-[70px] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
             </div>
-            
-            {/* Conditional 'Present' Button for End Dates */}
             {isEndDate && (
-                <button 
-                    type="button" 
-                    onClick={() => {
-                        onMonthChange("");
-                        onYearChange("Present");
-                    }}
-                    className="text-xs text-blue-600 font-bold text-left hover:underline w-fit mt-1"
-                >
+                <button type="button" onClick={() => { onMonthChange(""); onYearChange("Present"); }} className="text-xs text-blue-600 font-bold text-left hover:underline w-fit mt-1">
                     Set to "Present"
                 </button>
             )}
@@ -78,17 +55,17 @@ function MonthYearPicker({ monthValue, yearValue, onMonthChange, onYearChange, i
     );
 }
 
+// --- MAIN FORM ---
 export function ResumeForm({ data, updateData }) {
     const [activeSection, setActiveSection] = React.useState("personal");
 
-    // Handlers
     const handleChange = (e) => {
         const { name, value } = e.target;
-        updateData((prevData) => ({ ...prevData, [name]: value }));
+        updateData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleArrayChange = (section, index, field, value) => {
-        updateData((prev) => {
+        updateData(prev => {
             const newArray = [...prev[section]];
             newArray[index] = { ...newArray[index], [field]: value };
             return { ...prev, [section]: newArray };
@@ -96,146 +73,133 @@ export function ResumeForm({ data, updateData }) {
     };
 
     const addArrayItem = (section, emptyTemplate) => {
-        updateData((prev) => ({
-            ...prev,
-            [section]: [...prev[section], emptyTemplate]
-        }));
+        updateData(prev => ({ ...prev, [section]: [...prev[section], emptyTemplate] }));
     };
 
     const toggleSection = (section) => setActiveSection(activeSection === section ? "" : section);
 
     return (
-        <div className="w-1/2 p-4 h-screen overflow-y-auto bg-gray-50 border-r">
+        <div className="w-full p-4 h-full overflow-y-auto bg-gray-50">
             
-            {/* Section: Personal Info */}
-            <div className="mb-4 border rounded shadow-sm bg-white">
-                <Button variant="ghost" onClick={() => toggleSection("personal")} className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold">
-                    Personal Information <span>{activeSection === "personal" ? "▼" : "▶"}</span>
+            {/* PERSONAL INFO */}
+            <div className="mb-4 border rounded shadow-sm bg-white overflow-hidden w-full">
+                <Button variant="ghost" onClick={() => toggleSection("personal")} className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold hover:bg-slate-50">
+                    Personal Information <span className="text-slate-400">{activeSection === "personal" ? "▼" : "▶"}</span>
                 </Button>
                 {activeSection === "personal" && (
-                    <div className="p-4 flex flex-col gap-3 border-t">
-                        <input type="text" name="fullname" value={data.fullname || ""} onChange={handleChange} placeholder="Enter Full Name" className="border p-2 rounded w-full"/>
-                        <input type="email" name="email" value={data.email || ""} onChange={handleChange} placeholder="Enter your Email" className="border p-2 rounded w-full" />
-                        <input type="text" name="country" value={data.country || ""} onChange={handleChange} placeholder="City, Country" className="border p-2 rounded w-full"/>
-                        <input type="tel" name="phone" value={data.phone || ""} onChange={handleChange} placeholder="Enter your phone number" className="border p-2 rounded w-full"/>
-                        <input type="text" name="linkedin" value={data.linkedin || ""} onChange={handleChange} placeholder="LinkedIn URL" className="border p-2 rounded w-full"/>
-                        <input type="text" name="github" value={data.github || ""} onChange={handleChange} placeholder="GitHub URL" className="border p-2 rounded w-full"/>  
+                    <div className="p-5 flex flex-col gap-4 border-t bg-slate-50/50 w-full">
+                        <FormInput label="Full Name" name="fullname" value={data.fullname || ""} onChange={handleChange} placeholder="e.g. Fetehadin Negash" />
+                        <div className="flex flex-wrap gap-4 w-full">
+                            <FormInput className="flex-1 min-w-[200px]" label="Email Address" name="email" type="email" value={data.email || ""} onChange={handleChange} placeholder="hello@example.com" />
+                            <FormInput className="flex-1 min-w-[200px]" label="Phone Number" name="phone" type="tel" value={data.phone || ""} onChange={handleChange} placeholder="+251 900 0000" />
+                        </div>
+                        <FormInput label="Location" name="country" value={data.country || ""} onChange={handleChange} placeholder="City, Country" />
+                        <div className="flex flex-wrap gap-4 w-full">
+                            <FormInput className="flex-1 min-w-[200px]" label="LinkedIn Profile" name="linkedin" value={data.linkedin || ""} onChange={handleChange} placeholder="linkedin.com/in/username" />
+                            <FormInput className="flex-1 min-w-[200px]" label="GitHub Profile" name="github" value={data.github || ""} onChange={handleChange} placeholder="github.com/username" />
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* Section: Summary */}
-            <div className="mb-4 border rounded shadow-sm bg-white">
-                <Button variant="ghost" onClick={() => toggleSection("Summary")} className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold">
-                    Summary <span>{activeSection === "Summary" ? "▼" : "▶"}</span>
+            {/* SUMMARY */}
+            <div className="mb-4 border rounded shadow-sm bg-white overflow-hidden w-full">
+                <Button variant="ghost" onClick={() => toggleSection("Summary")} className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold hover:bg-slate-50">
+                    Summary <span className="text-slate-400">{activeSection === "Summary" ? "▼" : "▶"}</span>
                 </Button>
                 {activeSection === "Summary" && (
-                    <div className="p-4 flex flex-col gap-3 border-t">
-                        <textarea name="summary" value={data.summary || ""} onChange={handleChange} placeholder="Write a brief summary about yourself..." className="border p-2 rounded min-h-[120px] w-full"/>
+                    <div className="p-5 flex flex-col gap-1.5 border-t bg-slate-50/50 w-full">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-1">Professional Summary</label>
+                        <textarea name="summary" value={data.summary || ""} onChange={handleChange} placeholder="Write a brief summary..." className="border border-slate-300 p-3 rounded-md min-h-[120px] w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"/>
                     </div>
                 )}      
             </div>
 
-            {/* Section: Education ARRAY */}
-            <div className="mb-4 border rounded shadow-sm bg-white">
-                <Button variant="ghost" onClick={() => toggleSection("Education")} className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold">
-                    Education <span>{activeSection === "Education" ? "▼" : "▶"}</span>
+            {/* EDUCATION */}
+            <div className="mb-4 border rounded shadow-sm bg-white overflow-hidden w-full">
+                <Button variant="ghost" onClick={() => toggleSection("Education")} className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold hover:bg-slate-50">
+                    Education <span className="text-slate-400">{activeSection === "Education" ? "▼" : "▶"}</span>
                 </Button>
                 {activeSection === "Education" && (
-                    <div className="p-4 flex flex-col gap-6 border-t">
+                    <div className="p-5 flex flex-col gap-6 border-t bg-slate-50/50 w-full">
                         {data.education.map((edu, index) => (
-                            <div key={edu.id} className="flex flex-col gap-3 p-4 border rounded bg-gray-50">
-                                <h4 className="font-bold text-slate-700">Education #{index + 1}</h4>
-                                <input type="text" value={edu.schoolname || ""} onChange={(e) => handleArrayChange("education", index, "schoolname", e.target.value)} placeholder="Enter School Name" className="border p-2 rounded w-full"/>
-                                <div className="flex gap-4 w-full">
-                                    <div className="w-1/2">
-                                        <label className="text-xs text-slate-500 mb-1 block">Start Date</label>
-                                        <MonthYearPicker 
-                                            monthValue={edu.eduStartMonth} yearValue={edu.eduStartYear}
-                                            onMonthChange={(val) => handleArrayChange("education", index, "eduStartMonth", val)}
-                                            onYearChange={(val) => handleArrayChange("education", index, "eduStartYear", val)}
-                                        />
+                            <div key={edu.id} className="flex flex-col gap-4 p-5 border border-slate-200 rounded-md bg-white shadow-sm w-full">
+                                <h4 className="font-bold text-slate-700 uppercase tracking-wide text-sm border-b pb-2">Education #{index + 1}</h4>
+                                <FormInput label="School Name" value={edu.schoolname || ""} onChange={(e) => handleArrayChange("education", index, "schoolname", e.target.value)} placeholder="e.g. University of Technology" />
+                                
+                                <div className="flex flex-wrap gap-4 w-full">
+                                    <div className="flex-1 min-w-[200px]">
+                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-1 mb-1 block">Start Date</label>
+                                        <MonthYearPicker monthValue={edu.eduStartMonth} yearValue={edu.eduStartYear} onMonthChange={(val) => handleArrayChange("education", index, "eduStartMonth", val)} onYearChange={(val) => handleArrayChange("education", index, "eduStartYear", val)} />
                                     </div>
-                                    <div className="w-1/2">
-                                        <label className="text-xs text-slate-500 mb-1 block">End Date</label>
-                                        <MonthYearPicker 
-                                            isEndDate={true}
-                                            minAllowedYear={edu.eduStartYear} // <-- PASSES THE START YEAR FOR LOGIC CHECK
-                                            monthValue={edu.eduEndMonth} yearValue={edu.eduEndYear}
-                                            onMonthChange={(val) => handleArrayChange("education", index, "eduEndMonth", val)}
-                                            onYearChange={(val) => handleArrayChange("education", index, "eduEndYear", val)}
-                                        />
+                                    <div className="flex-1 min-w-[200px]">
+                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-1 mb-1 block">End Date</label>
+                                        <MonthYearPicker isEndDate={true} minAllowedYear={edu.eduStartYear} monthValue={edu.eduEndMonth} yearValue={edu.eduEndYear} onMonthChange={(val) => handleArrayChange("education", index, "eduEndMonth", val)} onYearChange={(val) => handleArrayChange("education", index, "eduEndYear", val)} />
                                     </div>
                                 </div>
-                                <input type="text" value={edu.program || ""} onChange={(e) => handleArrayChange("education", index, "program", e.target.value)} placeholder="Degree or Program" className="border p-2 rounded w-full"/>
-                                <textarea value={edu.eduDescription || ""} onChange={(e) => handleArrayChange("education", index, "eduDescription", e.target.value)} placeholder="- Developed core competencies..." className="border p-2 rounded min-h-[100px] w-full"/>
+
+                                <FormInput label="Degree / Program" value={edu.program || ""} onChange={(e) => handleArrayChange("education", index, "program", e.target.value)} placeholder="e.g. B.Sc. Computer Science" />
+                                
+                                <div className="flex flex-col gap-1.5 w-full">
+                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-1">Achievements (Bullet points)</label>
+                                    <textarea value={edu.eduDescription || ""} onChange={(e) => handleArrayChange("education", index, "eduDescription", e.target.value)} placeholder="- Graduated with honors..." className="border border-slate-300 p-3 rounded-md min-h-[100px] w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"/>
+                                </div>
                             </div>
                         ))}
-                        <Button 
-                            variant="outline" 
-                            className="w-full mt-2" 
-                            onClick={() => addArrayItem("education", { id: crypto.randomUUID(), schoolname: "", eduStartMonth: "", eduStartYear: "", eduEndMonth: "", eduEndYear: "", program: "", eduDescription: "" })}
-                        >
+                        <Button variant="outline" className="w-full mt-2 font-bold text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => addArrayItem("education", { id: crypto.randomUUID(), schoolname: "", eduStartMonth: "", eduStartYear: "", eduEndMonth: "", eduEndYear: "", program: "", eduDescription: "" })}>
                             + Add Another School
                         </Button>
                     </div>
                 )}
             </div>
 
-            {/* Section: Work Experience ARRAY */}
-            <div className="mb-4 border rounded shadow-sm bg-white">
-                <Button variant="ghost" onClick={() => toggleSection("WORK EXPERIENCE")} className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold">
-                    WORK EXPERIENCE <span>{activeSection === "WORK EXPERIENCE" ? "▼" : "▶"}</span>
+            {/* EXPERIENCE */}
+            <div className="mb-4 border rounded shadow-sm bg-white overflow-hidden w-full">
+                <Button variant="ghost" onClick={() => toggleSection("Experience")} className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold hover:bg-slate-50">
+                    Work Experience <span className="text-slate-400">{activeSection === "Experience" ? "▼" : "▶"}</span>
                 </Button>
-                {activeSection === "WORK EXPERIENCE" && (
-                    <div className="p-4 flex flex-col gap-6 border-t">
+                {activeSection === "Experience" && (
+                    <div className="p-5 flex flex-col gap-6 border-t bg-slate-50/50 w-full">
                         {data.experience.map((exp, index) => (
-                            <div key={exp.id} className="flex flex-col gap-3 p-4 border rounded bg-gray-50">
-                                <h4 className="font-bold text-slate-700">Experience #{index + 1}</h4>
-                                <input type="text" value={exp.company || ""} onChange={(e) => handleArrayChange("experience", index, "company", e.target.value)} placeholder="Enter Company Name" className="border p-2 rounded w-full"/>
-                                <div className="flex gap-4 w-full">
-                                    <div className="w-1/2">
-                                        <label className="text-xs text-slate-500 mb-1 block">Start Date</label>
-                                        <MonthYearPicker 
-                                            isEndDate={true}
-                                            minAllowedYear={exp.workStartYear} // <-- PASSES THE START YEAR FOR LOGIC CHECK
-                                            monthValue={exp.workStartMonth} yearValue={exp.workStartYear}
-                                            onMonthChange={(val) => handleArrayChange("experience", index, "workStartMonth", val)}
-                                            onYearChange={(val) => handleArrayChange("experience", index, "workStartYear", val)}
-                                        />
+                            <div key={exp.id} className="flex flex-col gap-4 p-5 border border-slate-200 rounded-md bg-white shadow-sm w-full">
+                                <h4 className="font-bold text-slate-700 uppercase tracking-wide text-sm border-b pb-2">Experience #{index + 1}</h4>
+                                <FormInput label="Company Name" value={exp.company || ""} onChange={(e) => handleArrayChange("experience", index, "company", e.target.value)} placeholder="e.g. Google" />
+                                
+                                <div className="flex flex-wrap gap-4 w-full">
+                                    <div className="flex-1 min-w-[200px]">
+                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-1 mb-1 block">Start Date</label>
+                                        <MonthYearPicker monthValue={exp.workStartMonth} yearValue={exp.workStartYear} onMonthChange={(val) => handleArrayChange("experience", index, "workStartMonth", val)} onYearChange={(val) => handleArrayChange("experience", index, "workStartYear", val)} />
                                     </div>
-                                    <div className="w-1/2">
-                                        <label className="text-xs text-slate-500 mb-1 block">End Date</label>
-                                        <MonthYearPicker 
-                                            monthValue={exp.workEndMonth} yearValue={exp.workEndYear}
-                                            onMonthChange={(val) => handleArrayChange("experience", index, "workEndMonth", val)}
-                                            onYearChange={(val) => handleArrayChange("experience", index, "workEndYear", val)}
-                                        />
+                                    <div className="flex-1 min-w-[200px]">
+                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-1 mb-1 block">End Date</label>
+                                        <MonthYearPicker isEndDate={true} minAllowedYear={exp.workStartYear} monthValue={exp.workEndMonth} yearValue={exp.workEndYear} onMonthChange={(val) => handleArrayChange("experience", index, "workEndMonth", val)} onYearChange={(val) => handleArrayChange("experience", index, "workEndYear", val)} />
                                     </div>
                                 </div>
-                                <input type="text" value={exp.profession || ""} onChange={(e) => handleArrayChange("experience", index, "profession", e.target.value)} placeholder="Profession / Job Title" className="border p-2 rounded w-full"/>
-                                <textarea value={exp.experienceDescription || ""} onChange={(e) => handleArrayChange("experience", index, "experienceDescription", e.target.value)} placeholder="- Managed team..." className="border p-2 rounded min-h-[100px] w-full"/>
+
+                                <FormInput label="Job Title" value={exp.profession || ""} onChange={(e) => handleArrayChange("experience", index, "profession", e.target.value)} placeholder="e.g. Software Engineer" />
+                                
+                                <div className="flex flex-col gap-1.5 w-full">
+                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-1">Responsibilities (Bullet points)</label>
+                                    <textarea value={exp.experienceDescription || ""} onChange={(e) => handleArrayChange("experience", index, "experienceDescription", e.target.value)} placeholder="- Led a team of 5..." className="border border-slate-300 p-3 rounded-md min-h-[100px] w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"/>
+                                </div>
                             </div>
                         ))}
-                        <Button 
-                            variant="outline" 
-                            className="w-full mt-2" 
-                            onClick={() => addArrayItem("experience", { id: crypto.randomUUID(), company: "", workStartMonth: "", workStartYear: "", workEndMonth: "", workEndYear: "", profession: "", experienceDescription: "" })}
-                        >
+                        <Button variant="outline" className="w-full mt-2 font-bold text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => addArrayItem("experience", { id: crypto.randomUUID(), company: "", workStartMonth: "", workStartYear: "", workEndMonth: "", workEndYear: "", profession: "", experienceDescription: "" })}>
                             + Add Another Job
                         </Button>
                     </div>
                 )}
             </div>
 
-            {/* Section: Skills */}
-            <div className="mb-4 border rounded shadow-sm bg-white">
-                <Button variant="ghost" onClick={() => toggleSection("Skills")} className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold">
-                    Skills <span>{activeSection === "Skills" ? "▼" : "▶"}</span>
+            {/* SKILLS */}
+            <div className="mb-4 border rounded shadow-sm bg-white overflow-hidden w-full">
+                <Button variant="ghost" onClick={() => toggleSection("Skills")} className="w-full flex justify-between py-6 rounded-b-none text-lg font-bold hover:bg-slate-50">
+                    Skills <span className="text-slate-400">{activeSection === "Skills" ? "▼" : "▶"}</span>
                 </Button>
                 {activeSection === "Skills" && (
-                    <div className="p-4 flex flex-col gap-3 border-t">
-                        <textarea name="skills" value={data.skills || ""} onChange={handleChange} placeholder="e.g. JavaScript, React, Node.js (comma separated or bulleted)..." className="border p-2 rounded min-h-[100px] w-full"/>
+                    <div className="p-5 flex flex-col gap-1.5 border-t bg-slate-50/50 w-full">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-1">Technical Skills</label>
+                        <textarea name="skills" value={data.skills || ""} onChange={handleChange} placeholder="e.g. React, Node.js, TypeScript..." className="border border-slate-300 p-3 rounded-md min-h-[120px] w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"/>
                     </div>
                 )}
             </div>

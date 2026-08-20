@@ -5,7 +5,7 @@ export function ResumePreview({ data }) {
     const hasExperience = data.experience && data.experience.some(exp => exp.company || exp.profession);
 
     return (
-        <div className="w-1/2 p-8 bg-white flex flex-col items-center text-center overflow-y-auto h-screen">
+        <div className="w-full h-full p-8 flex flex-col items-center text-center">
             
             {/* Tier 1: Full Name */}
             <h1 className="text-3xl font-bold tracking-wide text-slate-900 uppercase">
@@ -113,11 +113,22 @@ export function ResumePreview({ data }) {
             {/* Tier 7: Skills */}
             {data.skills && (
                 <div className="w-full mt-6 text-left">
-                    <h2 className="text-[1rem] font-bold tracking-wide text-blue-900 uppercase mb-2">
+                    <h2 className="text-[1rem] font-bold tracking-wide text-blue-900 uppercase mb-3">
                         SKILLS
                     </h2>
-                    <div className="text-[0.95rem] text-slate-800 leading-relaxed whitespace-pre-line">
-                        {data.skills}
+                    <div className="flex flex-wrap gap-2">
+                        {data.skills
+                            .split(/[,\n]+/) // Chops the string by commas OR new lines
+                            .map((skill) => skill.trim()) // Cleans up accidental extra spaces
+                            .filter((skill) => skill !== "") // Ignores empty blank chops
+                            .map((skill, index) => (
+                                <span 
+                                    key={index} 
+                                    className="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 text-[0.85rem] font-semibold rounded-md shadow-sm print:shadow-none"
+                                >
+                                    {skill}
+                                </span>
+                            ))}
                     </div>
                 </div>
             )}
