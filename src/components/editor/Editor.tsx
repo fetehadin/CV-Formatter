@@ -8,6 +8,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { moveSection } from "@/lib/resume/edit"
 import { formatRange } from "@/lib/resume/format"
 import { SECTION_LABELS, type Basics, type Resume, type SectionKey } from "@/lib/resume/schema"
+import { DraftSummary } from "@/components/ai/AiAssist"
 import { useEditorNav } from "@/state/editor-nav"
 import { useWorkspace } from "@/state/workspace"
 import { EntryList } from "./EntryList"
@@ -49,14 +50,17 @@ function SectionFields({ section }: { section: SectionKey }) {
   switch (section) {
     case "summary":
       return (
-        <TextAreaField
-          label="Professional summary"
-          rows={5}
-          value={resume.summary}
-          onChange={(summary) => updateResume((r) => ({ ...r, summary }))}
-          placeholder="Frontend engineer with 3 years building React apps for fintech. Cut page load time by 45% at…"
-          hint="2–4 sentences: who you are, your strongest skills, and one result."
-        />
+        <div className="flex flex-col gap-2">
+          <TextAreaField
+            label="Professional summary"
+            rows={5}
+            value={resume.summary}
+            onChange={(summary) => updateResume((r) => ({ ...r, summary }))}
+            placeholder="Frontend engineer with 3 years building React apps for fintech. Cut page load time by 45% at…"
+            hint="2–4 sentences: who you are, your strongest skills, and one result."
+          />
+          <DraftSummary onUse={(summary) => updateResume((r) => ({ ...r, summary }))} />
+        </div>
       )
 
     case "experience":
@@ -70,7 +74,7 @@ function SectionFields({ section }: { section: SectionKey }) {
               </Row>
               <TextField label="Location (optional)" value={x.location} onChange={(location) => update({ location })} placeholder="Addis Ababa or Remote" />
               <DateRangeField start={x.start} end={x.end} current={x.current} onChange={update} currentLabel="I work here now" />
-              <BulletsField value={x.bullets} onChange={(bullets) => update({ bullets })} placeholder={"Built the merchant dashboard in React and TypeScript\nCut page load time by 45% with code-splitting"} />
+              <BulletsField ai={{ title: [x.role, x.company].filter(Boolean).join(" at "), current: x.current }} value={x.bullets} onChange={(bullets) => update({ bullets })} placeholder={"Built the merchant dashboard in React and TypeScript\nCut page load time by 45% with code-splitting"} />
             </>
           )}
         </EntryList>
@@ -104,7 +108,7 @@ function SectionFields({ section }: { section: SectionKey }) {
               </Row>
               <TextField label="Tech used" value={p.tech} onChange={(tech) => update({ tech })} placeholder="React, IndexedDB, Node.js" hint="Comma-separated." />
               <DateRangeField start={p.start} end={p.end} current={p.current} onChange={update} currentLabel="Ongoing" />
-              <BulletsField value={p.bullets} onChange={(bullets) => update({ bullets })} placeholder={"Built an offline-first app used by 3 clinics\nSynced 10k records with zero data loss"} />
+              <BulletsField ai={{ title: p.name, current: p.current }} value={p.bullets} onChange={(bullets) => update({ bullets })} placeholder={"Built an offline-first app used by 3 clinics\nSynced 10k records with zero data loss"} />
             </>
           )}
         </EntryList>
