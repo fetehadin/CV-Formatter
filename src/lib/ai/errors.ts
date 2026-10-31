@@ -1,9 +1,12 @@
 /** An AI failure with a short, user-facing hint on what to do next. */
 export class AiError extends Error {
   readonly hint?: string
-  constructor(message: string, hint?: string) {
+  /** True when another model might work (retired, busy, too slow). */
+  readonly tryAnotherModel: boolean
+  constructor(message: string, hint?: string, tryAnotherModel = false) {
     super(message)
     this.hint = hint
+    this.tryAnotherModel = tryAnotherModel
   }
 }
 

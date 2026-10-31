@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { parseResume } from "@/lib/resume/schema"
 import { guardSuggestion } from "./guard"
-import { AiError, extractJson, sseData } from "./providers"
+import { AiError, extractJson, GEMINI_FALLBACKS, pickTextModels, sseData, withGeminiFallback } from "./providers"
 import { AiSettingsSchema, isConfigured } from "./settings"
 import { BulletResultSchema, bulletAsk, sourceText, summaryAsk } from "./tasks"
 
@@ -76,6 +76,13 @@ describe("extractJson", () => {
   })
 })
 
+describe("pickTextModels", () => {
+  it("drops speech/image/music models and puts the recommended one first", () => {
+    const ids = ["gemini-2.5-flash", "gemini-2.5-flash-preview-tts", "gemini-3-pro-image", "lyria-3.5", "gemini-flash-latest", "gemini-robotics-er-2-preview", "gemma-4-31b-it", "nano-banana-pro-preview"]
+    expect(pickTextModels(ids, ["gemini-flash-latest", "missing"])).toEqual(["gemini-flash-latest", "gemini-2.5-flash", "gemma-4-31b-it"])
+  })
+})
+
 describe("sseData", () => {
   it("splits events across chunk boundaries", async () => {
     const enc = new TextEncoder()
@@ -99,5 +106,33 @@ describe("AI settings", () => {
     expect(isConfigured({ ...s, apiKey: "k", model: "claude-opus-5-5" })).toBe(true)
     expect(isConfigured({ ...s, provider: "openai", model: "llama3", apiKey: "" })).toBe(true)
     expect(isConfigured({ ...s, provider: "ondevice", model: "" })).toBe(true)
+  })
+})
+
+describe("withGeminiFallback", () => {
+  const settings = { ...AiSettingsSchema.parse({}), provider: "gemini" as const, apiKey: "k", model: "gemini-2.5-flash" }
+
+  it("moves on from a retired or busy model and reports the one that answered", async () => {
+    const tried: string[] = []
+    let switched = ""
+    const result = await withGeminiFallback(settings, { system: "", prompt: "", onModelChange: (m) => (switched = m) }, async (model) => {
+      tried.push(model)
+      if (model !== "gemini-flash-latest") throw new AiError("busy", undefined, true)
+      return "ok"
+    })
+    expect(result).toBe("ok")
+    expect(tried).toEqual(["gemini-2.5-flash", ...GEMINI_FALLBACKS])
+    expect(switched).toBe("gemini-flash-latest")
+  })
+
+  it("doesn't retry errors another model can't fix, like a bad key", async () => {
+    const tried: string[] = []
+    await expect(
+      withGeminiFallback(settings, { system: "", prompt: "" }, async (model) => {
+        tried.push(model)
+        throw new AiError("bad key")
+      }),
+    ).rejects.toThrow("bad key")
+    expect(tried).toEqual(["gemini-2.5-flash"])
   })
 })
