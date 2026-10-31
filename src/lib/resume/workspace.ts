@@ -37,7 +37,7 @@ export type CvDocument = z.infer<typeof CvDocumentSchema>
 export const WorkspaceSchema = z.object({
   version: z.literal(3).catch(3),
   activeId: z.string().catch(""),
-  documents: z.array(CvDocumentSchema).catch([]),
+  documents: z.array(CvDocumentSchema).catch(() => []),
 })
 export type Workspace = z.infer<typeof WorkspaceSchema>
 

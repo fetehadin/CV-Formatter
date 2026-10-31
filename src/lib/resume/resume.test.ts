@@ -31,6 +31,15 @@ describe("parseResume", () => {
     expect(r.skills[0].id).toMatch(/[0-9a-f-]{36}/)
   })
 
+  it("never shares default objects between calls", () => {
+    const a = parseResume({})
+    const b = parseResume({})
+    expect(a.basics).not.toBe(b.basics)
+    expect(a.experience).not.toBe(b.experience)
+    a.basics.name = "changed"
+    expect(parseResume({}).basics.name).toBe("")
+  })
+
   it("starts a new CV with one empty job and school", () => {
     const r = emptyResume()
     expect(r.experience).toHaveLength(1)

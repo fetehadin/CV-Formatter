@@ -1,7 +1,9 @@
 import "./App.css"
 import { useCallback, useDeferredValue, useMemo, useState, type ReactNode } from "react"
-import { Download, FileText } from "lucide-react"
+import { Download, FileText, FileUp } from "lucide-react"
 import { CheckPanel } from "@/components/check/CheckPanel"
+import { DataMenu } from "@/components/data/DataMenu"
+import { ImportDialog } from "@/components/data/ImportDialog"
 import { DocumentSwitcher } from "@/components/documents/DocumentSwitcher"
 import { Editor } from "@/components/editor/Editor"
 import { usePageCount } from "@/components/preview/PageMeter"
@@ -68,6 +70,9 @@ export default function App() {
   const deferredResume = useDeferredValue(resume)
   const report = useMemo(() => analyzeResume(deferredResume, { pages }), [deferredResume, pages])
 
+  const [importing, setImporting] = useState(false)
+  const isBlank = !resume.basics.name.trim() && resume.experience.every((x) => !x.role && !x.company && !x.bullets.join("").trim())
+
   const [navRequest, setNavRequest] = useState<NavRequest | null>(null)
   const goTo = useCallback((target: IssueTarget) => {
     setMobileView("edit")
@@ -78,6 +83,17 @@ export default function App() {
   const editor = (
     <div className="h-full overflow-y-auto bg-background">
       <div className="mx-auto max-w-2xl p-4 md:p-6">
+        {isBlank && (
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-dashed bg-muted/40 p-4">
+            <FileUp className="size-5 text-muted-foreground" aria-hidden />
+            <p className="min-w-0 flex-1 text-sm">
+              <span className="font-medium">Have a CV already?</span> <span className="text-muted-foreground">Import a PDF, Word text or JSON instead of typing it all again.</span>
+            </p>
+            <Button variant="outline" size="sm" onClick={() => setImporting(true)}>
+              Import
+            </Button>
+          </div>
+        )}
         {/* Remount per CV version so open/closed entry state doesn't leak between versions. */}
         <Editor key={doc.id} />
       </div>
@@ -97,10 +113,13 @@ export default function App() {
             <DocumentSwitcher />
           </div>
 
-          <Button onClick={() => printCv(resume.basics.name)} aria-label="Download PDF">
-            <Download />
-            <span className="hidden sm:inline">Download PDF</span>
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <DataMenu onImport={() => setImporting(true)} />
+            <Button onClick={() => printCv(resume.basics.name)} aria-label="Download PDF">
+              <Download />
+              <span className="hidden sm:inline">Download PDF</span>
+            </Button>
+          </div>
         </header>
 
         <main className="min-h-0 flex-1">
@@ -135,6 +154,8 @@ export default function App() {
         )}
         {meter}
       </div>
+
+      <ImportDialog open={importing} onOpenChange={setImporting} />
 
       {/* Only visible when printing. */}
       <div id="print-root" aria-hidden>
