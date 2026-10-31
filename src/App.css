@@ -1,41 +1,44 @@
-/* App.css */
+/* --- A4 SHEET --- */
+.cv-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm 14mm;
+  box-sizing: border-box;
+}
 
-/* --- NATIVE BROWSER PDF ENGINE --- */
+/* --- NATIVE BROWSER PDF ENGINE ---
+ * The app UI is hidden and only the print copy (#print-root) is shown.
+ * Margin 0 stops the browser adding its URL/date header and footer;
+ * `box-decoration-break: clone` repeats the sheet padding on every page.
+ */
+@media screen {
+  #print-root {
+    display: none;
+  }
+}
+
 @media print {
   @page {
-    /* Removes browser header/footer URLs and dates */
-    margin: 0; 
     size: A4 portrait;
+    margin: 0;
   }
-  
-  
+
+  html,
   body {
-    background-color: white !important;
-    /* Forces Tailwind background colors to print */
+    background: white !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Hides the UI (buttons, forms, navbar) during PDF generation */
-  .hide-on-print {
+  #app-root,
+  [data-sonner-toaster] {
     display: none !important;
   }
 
-  /* Resets the layout so the resume takes up the whole PDF page */
-  .print-fullscreen {
-    width: 100% !important;
-    height: 100% !important;
-    overflow: visible !important;
-    background-color: white !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-  .origin-top {
-      transform: none !important;
-      margin-bottom: 0 !important;
-    }
-  /* Removes the shadow from the paper in the PDF */
-  .print-no-shadow {
-    box-shadow: none !important;
+  #print-root .cv-page {
+    width: 210mm;
+    min-height: 0;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
   }
 }
