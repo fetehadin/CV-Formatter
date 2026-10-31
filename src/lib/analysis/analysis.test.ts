@@ -65,6 +65,13 @@ describe("analyzeResume", () => {
     expect(rules(r)).toEqual(expect.arrayContaining(["date.backwards", "text.emoji", "skills.duplicate", "text.buzzword"]))
   })
 
+  it("flags [placeholders] left over from AI suggestions", () => {
+    const r = strong()
+    r.experience[0].bullets[0] = "Built the dashboard used by [N] merchants"
+    expect(rules(r)).toContain("text.placeholder")
+    expect(rules(strong())).not.toContain("text.placeholder")
+  })
+
   it("puts errors before warnings before tips", () => {
     const order = analyzeResume(parseResume({})).issues.map((i) => i.severity)
     const rank = { error: 0, warning: 1, tip: 2 }
