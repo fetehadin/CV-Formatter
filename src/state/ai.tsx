@@ -1,8 +1,11 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
+import { toast } from "sonner"
 import { clearAiSettings, defaultAiSettings, isConfigured, loadAiSettings, PROVIDER_INFO, saveAiSettings, type AiSettings } from "@/lib/ai/settings"
 
 type AiApi = {
   settings: AiSettings
+  /** Pass to AI calls: saves the model that answered when the chosen one failed. */
+  onModelChange: (model: string) => void
   ready: boolean
   providerLabel: string
   save: (s: AiSettings) => void
@@ -22,6 +25,15 @@ export function AiProvider({ children }: { children: ReactNode }) {
     setSettings(s)
   }, [])
 
+  const onModelChange = useCallback((model: string) => {
+    setSettings((prev) => {
+      const next = { ...prev, model }
+      saveAiSettings(next)
+      return next
+    })
+    toast.info(`Switched to ${model}`, { description: "Your chosen model was unavailable or busy, so this one answered. It's now your default." })
+  }, [])
+
   const forget = useCallback(() => {
     clearAiSettings()
     setSettings(defaultAiSettings())
@@ -30,6 +42,7 @@ export function AiProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AiApi>(
     () => ({
       settings,
+      onModelChange,
       ready: isConfigured(settings),
       providerLabel: settings.provider === "openai" ? settings.model || "AI" : PROVIDER_INFO[settings.provider].label.split(" (")[0],
       save,
@@ -37,7 +50,7 @@ export function AiProvider({ children }: { children: ReactNode }) {
       settingsOpen,
       setSettingsOpen,
     }),
-    [settings, save, forget, settingsOpen],
+    [settings, onModelChange, save, forget, settingsOpen],
   )
 
   return <AiContext.Provider value={value}>{children}</AiContext.Provider>

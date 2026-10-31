@@ -21,7 +21,8 @@ export const PROVIDER_INFO: Record<ProviderId, { label: string; needsKey: boolea
     label: "Google Gemini",
     needsKey: true,
     keyUrl: "https://aistudio.google.com/apikey",
-    defaultModel: "",
+    // An alias Google keeps pointing at its current fast model, so it never goes stale.
+    defaultModel: "gemini-flash-lite-latest",
     note: "Has a free tier. Your CV text is sent to Google.",
   },
   openai: {

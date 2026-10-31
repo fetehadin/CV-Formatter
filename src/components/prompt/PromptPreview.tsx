@@ -16,7 +16,7 @@ import { useAi } from "@/state/ai"
  */
 export function PromptPreview({ prompt }: { prompt: string }) {
   const [copied, setCopied] = useState(false)
-  const { ready, settings, providerLabel, setSettingsOpen } = useAi()
+  const { ready, settings, providerLabel, setSettingsOpen, onModelChange } = useAi()
   const [answer, setAnswer] = useState("")
   const [running, setRunning] = useState(false)
   const abort = useRef<AbortController | null>(null)
@@ -29,7 +29,7 @@ export function PromptPreview({ prompt }: { prompt: string }) {
     setAnswer("")
     try {
       const { streamText } = await loadProviders()
-      await streamText(settings, { system: REVIEW_SYSTEM, prompt, signal: abort.current.signal }, setAnswer)
+      await streamText(settings, { system: REVIEW_SYSTEM, prompt, signal: abort.current.signal, onModelChange }, setAnswer)
     } catch (err) {
       const e = describeAiError(err)
       if (e) toast.error(e.message, { description: e.hint })

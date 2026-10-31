@@ -1,6 +1,7 @@
 import "./App.css"
 import { useCallback, useDeferredValue, useMemo, useState, type ReactNode } from "react"
-import { Download, FileText, FileUp, Sparkles } from "lucide-react"
+import { toast } from "sonner"
+import { Download, FileText, FileUp, ShieldCheck, Sparkles } from "lucide-react"
 import { AiSettingsDialog } from "@/components/ai/AiSettingsDialog"
 import { CheckPanel } from "@/components/check/CheckPanel"
 import { DataMenu } from "@/components/data/DataMenu"
@@ -17,6 +18,8 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { analyzeResume, type IssueTarget } from "@/lib/analysis/analyze"
+import { exampleResume } from "@/lib/resume/example"
+import { newDocument } from "@/lib/resume/workspace"
 import { cn } from "@/lib/utils"
 import { EditorNavProvider, type NavRequest } from "@/state/editor-nav"
 import { useAi } from "@/state/ai"
@@ -62,7 +65,7 @@ function ViewTabs({ value, onChange, views, score }: { value: View; onChange: (v
 }
 
 export default function App() {
-  const { resume, doc } = useWorkspace()
+  const { resume, doc, updateWorkspace } = useWorkspace()
   const ai = useAi()
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const [mobileView, setMobileView] = useState<View>("edit")
@@ -75,6 +78,13 @@ export default function App() {
 
   const [importing, setImporting] = useState(false)
   const isBlank = !resume.basics.name.trim() && resume.experience.every((x) => !x.role && !x.company && !x.bullets.join("").trim())
+
+  /** Opens a sample CV as its own version, so the user's own CV is never touched. */
+  const loadExample = () => {
+    const example = newDocument(exampleResume(), { title: "Example CV" })
+    updateWorkspace((ws) => ({ ...ws, activeId: example.id, documents: [...ws.documents, example] }))
+    toast("Example CV opened", { description: "Explore Check and Tailor. Switch back to your own CV from the menu at the top." })
+  }
 
   const [navRequest, setNavRequest] = useState<NavRequest | null>(null)
   const goTo = useCallback((target: IssueTarget) => {
@@ -92,13 +102,21 @@ export default function App() {
             <p className="min-w-0 flex-1 text-sm">
               <span className="font-medium">Have a CV already?</span> <span className="text-muted-foreground">Import a PDF, Word text or JSON instead of typing it all again.</span>
             </p>
-            <Button variant="outline" size="sm" onClick={() => setImporting(true)}>
-              Import
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setImporting(true)}>
+                Import
+              </Button>
+              <Button variant="ghost" size="sm" onClick={loadExample}>
+                Try an example
+              </Button>
+            </div>
           </div>
         )}
         {/* Remount per CV version so open/closed entry state doesn't leak between versions. */}
         <Editor key={doc.id} />
+        <p className="mt-6 flex items-center justify-center gap-1.5 pb-2 text-center text-xs text-muted-foreground">
+          <ShieldCheck className="size-3.5" aria-hidden /> Saved only in this browser. No account, no tracking. Use “Back up all CVs” to keep a copy.
+        </p>
       </div>
     </div>
   )
