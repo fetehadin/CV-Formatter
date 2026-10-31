@@ -12,7 +12,7 @@ export const newId = () => crypto.randomUUID()
 
 const text = z.string().catch("")
 const flag = z.boolean().catch(false)
-const lines = z.array(z.string()).catch([])
+const lines = z.array(z.string()).catch(() => [])
 
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const
 
@@ -21,7 +21,7 @@ export const YearMonthSchema = z
     month: text, // "" or one of MONTHS
     year: text, // "" or 4 digits
   })
-  .catch({ month: "", year: "" })
+  .catch(() => ({ month: "", year: "" }))
 
 const dated = {
   start: YearMonthSchema,
@@ -114,7 +114,7 @@ export function normalizeSectionOrder(order: unknown): SectionKey[] {
   return result
 }
 
-const items = <T extends z.ZodType>(schema: T) => z.array(schema).catch([])
+const items = <T extends z.ZodType>(schema: T) => z.array(schema).catch(() => [])
 
 export const ResumeSchema = z.object({
   basics: z
@@ -128,7 +128,7 @@ export const ResumeSchema = z.object({
       github: text,
       website: text,
     })
-    .catch({ name: "", headline: "", email: "", phone: "", location: "", linkedin: "", github: "", website: "" }),
+    .catch(() => ({ name: "", headline: "", email: "", phone: "", location: "", linkedin: "", github: "", website: "" })),
   summary: text,
   experience: items(ExperienceSchema),
   education: items(EducationSchema),
@@ -136,7 +136,7 @@ export const ResumeSchema = z.object({
   skills: items(SkillGroupSchema),
   certifications: items(CertificationSchema),
   languages: items(LanguageSchema),
-  sectionOrder: z.array(z.string()).catch([]).transform(normalizeSectionOrder),
+  sectionOrder: z.array(z.string()).catch(() => []).transform(normalizeSectionOrder),
 })
 
 export type YearMonth = z.infer<typeof YearMonthSchema>

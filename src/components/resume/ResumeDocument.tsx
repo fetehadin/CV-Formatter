@@ -41,10 +41,12 @@ function Bullets({ items }: { items: string[] }) {
   const clean = cleanBullets(items)
   if (clean.length === 0) return null
   return (
-    <ul className="mt-[0.8mm] flex flex-col gap-[0.4mm] pl-[4.5mm]">
+    <ul className="mt-[0.8mm] flex flex-col gap-[0.4mm]">
       {clean.map((line, i) => (
-        <li key={i} className="list-disc break-inside-avoid marker:text-[8pt]">
-          {line}
+        // A real "•" character (not a CSS marker) so it exists in the PDF's text and ATS can spot bullets.
+        <li key={i} className="flex break-inside-avoid">
+          <span className="w-[4.5mm] shrink-0 pl-[1mm]">•</span>
+          <span>{line}</span>
         </li>
       ))}
     </ul>
