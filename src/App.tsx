@@ -2,10 +2,12 @@ import "./App.css"
 import { useCallback, useDeferredValue, useMemo, useState, type ReactNode } from "react"
 import { Download, FileText } from "lucide-react"
 import { CheckPanel } from "@/components/check/CheckPanel"
+import { DocumentSwitcher } from "@/components/documents/DocumentSwitcher"
 import { Editor } from "@/components/editor/Editor"
 import { usePageCount } from "@/components/preview/PageMeter"
 import { PreviewPane } from "@/components/preview/PreviewPane"
 import { ResumePage } from "@/components/resume/ResumeDocument"
+import { TailorPanel } from "@/components/tailor/TailorPanel"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
@@ -24,7 +26,7 @@ function printCv(name: string) {
   window.print()
 }
 
-type View = "edit" | "preview" | "check"
+type View = "edit" | "preview" | "check" | "tailor"
 
 function ScoreBadge({ score }: { score: number }) {
   const tone = score >= 85 ? "bg-emerald-100 text-emerald-800" : score >= 65 ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800"
@@ -35,6 +37,7 @@ function ViewTabs({ value, onChange, views, score }: { value: View; onChange: (v
   const labels: Record<View, ReactNode> = {
     edit: "Edit",
     preview: "Preview",
+    tailor: "Tailor",
     check: (
       <span className="flex items-center gap-1.5">
         Check <ScoreBadge score={score} />
@@ -55,7 +58,7 @@ function ViewTabs({ value, onChange, views, score }: { value: View; onChange: (v
 }
 
 export default function App() {
-  const { resume } = useWorkspace()
+  const { resume, doc } = useWorkspace()
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const [mobileView, setMobileView] = useState<View>("edit")
   const [sideView, setSideView] = useState<Exclude<View, "edit">>("preview")
@@ -75,22 +78,24 @@ export default function App() {
   const editor = (
     <div className="h-full overflow-y-auto bg-background">
       <div className="mx-auto max-w-2xl p-4 md:p-6">
-        <Editor />
+        {/* Remount per CV version so open/closed entry state doesn't leak between versions. */}
+        <Editor key={doc.id} />
       </div>
     </div>
   )
-  const side = (view: View) => (view === "check" ? <CheckPanel report={report} /> : <PreviewPane pages={pages} />)
+  const side = (view: View) =>
+    view === "check" ? <CheckPanel report={report} /> : view === "tailor" ? <TailorPanel /> : <PreviewPane pages={pages} />
 
   return (
     <EditorNavProvider value={nav}>
       <div id="app-root" className="flex h-dvh flex-col bg-background">
         <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
-          <div className="flex items-center gap-2">
-            <FileText className="size-5 text-primary" aria-hidden />
-            <h1 className="hidden text-base font-semibold tracking-tight sm:block">CV Formatter</h1>
+          <div className="flex min-w-0 items-center gap-2">
+            <FileText className="size-5 shrink-0 text-primary" aria-hidden />
+            <h1 className="hidden text-base font-semibold tracking-tight lg:block">CV Formatter</h1>
+            <span className="hidden text-muted-foreground lg:block" aria-hidden>/</span>
+            <DocumentSwitcher />
           </div>
-
-          {!isDesktop && <ViewTabs value={mobileView} onChange={setMobileView} views={["edit", "preview", "check"]} score={report.score} />}
 
           <Button onClick={() => printCv(resume.basics.name)} aria-label="Download PDF">
             <Download />
@@ -108,7 +113,7 @@ export default function App() {
               <ResizablePanel defaultSize="55%" minSize="30%">
                 <div className="flex h-full flex-col">
                   <div className="flex shrink-0 items-center justify-between border-b px-4 py-2">
-                    <ViewTabs value={sideView} onChange={(v) => setSideView(v as Exclude<View, "edit">)} views={["preview", "check"]} score={report.score} />
+                    <ViewTabs value={sideView} onChange={(v) => setSideView(v as Exclude<View, "edit">)} views={["preview", "check", "tailor"]} score={report.score} />
                     <span className="text-xs text-muted-foreground tabular-nums">
                       {pages} page{pages > 1 ? "s" : ""} · A4
                     </span>
@@ -123,6 +128,11 @@ export default function App() {
             side(mobileView)
           )}
         </main>
+        {!isDesktop && (
+          <nav aria-label="Views" className="flex shrink-0 justify-center border-t bg-background px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <ViewTabs value={mobileView} onChange={setMobileView} views={["edit", "preview", "check", "tailor"]} score={report.score} />
+          </nav>
+        )}
         {meter}
       </div>
 

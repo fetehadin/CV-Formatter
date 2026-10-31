@@ -68,7 +68,8 @@ describe("analyzeResume", () => {
   it("puts errors before warnings before tips", () => {
     const order = analyzeResume(parseResume({})).issues.map((i) => i.severity)
     const rank = { error: 0, warning: 1, tip: 2 }
-    expect(order.map((s) => rank[s])).toEqual([...order.map((s) => rank[s])].sort())
+    const ranks = order.map((s) => rank[s])
+    expect(ranks).toEqual(ranks.toSorted())
   })
 
   it("caps how much one repeated rule can cost", () => {
