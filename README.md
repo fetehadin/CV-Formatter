@@ -1,38 +1,72 @@
-# CV-Formatter
+# CV Formatter
 
-A strict, high-performance React application designed to transform unstructured resume data into a professional, ATS-optimized classic engineering CV. Instead of a free-form builder, this tool acts as a rigid schema that forces data into a highly optimized, deterministic A4 blueprint.
+A free, private CV builder that helps you write an ATS-friendly CV and tailor it to each job **without inventing anything**. Everything runs in your browser. There is no account, no server, and your CV never leaves your device unless you connect an AI yourself.
 
-**Live Demo:** https://cv-formatter-two.vercel.app/
+**Live demo:** https://cv-formatter-two.vercel.app/
+
+## Why
+
+- 77% of job seekers worry an applicant tracking system (ATS) filters them out before a person reads their CV.
+- Recruiters prefer CVs tailored to the job, but most people spend under 30 minutes tailoring.
+- AI-padded CVs are making recruiters suspicious. Fake keywords hurt more than they help.
+
+CV Formatter checks your CV, shows how it matches a job, and helps you reword it honestly.
 
 ## Features
-- **Fluid Split-Pane Workspace:** Draggable editing and preview panes built for responsive desktop and mobile views.
-- **Dynamic Auto-Scaling Preview:** Real-time observer calculations scale the A4 document to fit any screen without breaking text wrapping.
-- **Native PDF Export:** CSS Paged Media rules configured for pixel-perfect, exact-A4 printing directly from the browser.
-- **ATS-Optimized Layout:** Uses standard sans-serif typography, precise grid alignment for skills, and a clean DOM structure for parsing engines.
 
-## Tech Stack
-- React
-- Vite
-- Tailwind CSS
+**Write**
+- A structured editor: experience, education, projects, skills, certifications, languages
+- Add, reorder, duplicate and delete entries (with Undo); reorder whole sections
+- Live A4 preview, with markers where page 2 starts
+- One-column, text-based PDF (via your browser's "Save as PDF") that ATS can read
 
-## Future Roadmap
-Currently, this project operates as a strict data formatter. The long-term vision is to expand it into a comprehensive open-source CV maker, including:
-- **Resume Analysis Engine:** Implementing content evaluation to score keyword density, impact phrasing, and overall ATS readability.
-- **Modular Architecture:** Adding the ability to safely swap between multiple industry-standard templates without breaking data structure.
-- **Data Portability:** Supporting raw JSON schema imports and exports.
+**Check** (offline, rule-based)
+- Score out of 100 with clear fixes: weak openers ("Responsible for…"), missing numbers, pronouns, clichés, dates, duplicate skills, length
+- "Fix" jumps straight to the problem in the editor
+- "What an ATS reads": your CV as plain text in reading order
 
-## Local Development
+**Tailor** (offline)
+- Paste a job post to see which keywords you cover, split into required / mentioned / nice-to-have
+- Knows ~200 skills and their spellings (JS = JavaScript, k8s = Kubernetes)
+- Flags skills you list but never show in your experience
+- Separate CV versions per job, each with an application status
+
+**AI, optional and honest**
+- Copy-ready prompts for ChatGPT, Claude or Gemini, built from your CV and the check results
+- Or connect your own key: Anthropic, Google Gemini, any OpenAI-compatible API (OpenAI, Groq, OpenRouter, local Ollama), or Chrome's on-device model (experimental)
+- "Improve with AI" for bullets and "Draft with AI" for the summary
+- **Fact guard:** every suggestion is checked against your CV, and new numbers or skills are flagged before you can use them
+- Your name, email, phone and links are never sent
+
+**Your data**
+- Import an existing CV from a PDF (it also shows how readable the PDF is for ATS), pasted text, or JSON
+- Export to [JSON Resume](https://jsonresume.org), or back up and restore every version
+
+## Tech stack
+
+React 19, TypeScript, Vite, Tailwind CSS 4, shadcn/ui (Base UI), zod, pdf.js (loaded on demand), Anthropic TypeScript SDK (loaded on demand), Vitest, oxlint.
+
+## Development
 
 ```bash
-# Clone the repository
-git clone https://github.com/fetehadin/CV-Formatter.git
-
-# Navigate into the directory
-cd CV-Formatter
-
-# Install dependencies (uses pnpm based on project lockfile)
 pnpm install
-
-# Start the development server
-pnpm run dev
+pnpm dev          # http://localhost:5173
+pnpm test         # unit tests
+pnpm lint && pnpm typecheck
+pnpm build
 ```
+
+### Project layout
+
+```
+src/lib/resume/      CV data model (zod), storage + migration, formatting, edit helpers
+src/lib/analysis/    CV checker, plain-text (ATS) view, prompt builders
+src/lib/tailor/      skills dictionary and job-matching engine
+src/lib/portability/ PDF/text parser, JSON Resume, backups
+src/lib/ai/          AI providers, prompts, fact guard
+src/components/      UI (editor, preview, check, tailor, data, ai)
+```
+
+## Privacy
+
+CVs are stored in your browser's localStorage. API keys are kept in sessionStorage (forgotten when the tab closes) unless you choose to remember them, and are never included in exports. With an AI connected, the CV text (without contact details) goes directly from your browser to the provider you chose.

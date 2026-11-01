@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from "react"
+import { ImproveBullets } from "@/components/ai/AiAssist"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
@@ -76,11 +77,13 @@ export function TextAreaField({ label, value, onChange, placeholder, hint, rows 
  * One bullet per line. Empty lines are kept while editing (so pressing Enter
  * works) and dropped when the CV is rendered.
  */
-export function BulletsField({ label = "Bullet points", value, onChange, placeholder }: {
+export function BulletsField({ label = "Bullet points", value, onChange, placeholder, ai }: {
   label?: string
   value: string[]
   onChange: (value: string[]) => void
   placeholder?: string
+  /** When set, shows "Improve with AI" for these bullets. */
+  ai?: { title: string; current: boolean }
 }) {
   const id = useId()
   return (
@@ -93,6 +96,7 @@ export function BulletsField({ label = "Bullet points", value, onChange, placeho
         aria-describedby={`${id}-hint`}
         onChange={(e) => onChange(e.target.value.split("\n"))}
       />
+      {ai && <ImproveBullets entry={{ ...ai, bullets: value }} onReplace={(index, text) => onChange(value.map((b, i) => (i === index ? text : b)))} />}
     </FieldShell>
   )
 }

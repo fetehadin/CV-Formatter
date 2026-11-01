@@ -1,5 +1,6 @@
 import { cleanBullets, formatRange, isEndBeforeStart, splitList, toMonthNumber } from "@/lib/resume/format"
 import type { Resume, SectionKey, YearMonth } from "@/lib/resume/schema"
+import { resumeToPlainText } from "./plaintext"
 import { BUZZWORDS, FIRST_PERSON, isActionVerb, WEAK_OPENERS } from "./words"
 
 /**
@@ -169,6 +170,10 @@ export function analyzeResume(r: Resume, opts: { pages?: number | null } = {}): 
   }
   const everything = JSON.stringify(r)
   if (EMOJI.test(everything)) out.push({ rule: "text.emoji", severity: "warning", section: "basics", title: "Emoji or symbols found", detail: "Some ATS turn emoji into garbage characters. Remove them." })
+
+  // "[X%]"-style gaps left over from an AI suggestion.
+  const gaps = resumeToPlainText(r).match(/\[[^\]]{1,40}\]/g)
+  if (gaps) out.push({ rule: "text.placeholder", severity: "error", section: "experience", quote: [...new Set(gaps)].join(" "), title: "Fill in the placeholders", detail: "Replace each [ ] gap with your real figure, or remove it before you send the CV." })
 
   const verbs = new Map<string, number>()
   for (const line of [...jobs, ...r.projects].flatMap((x) => cleanBullets(x.bullets))) {

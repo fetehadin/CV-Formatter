@@ -1,9 +1,13 @@
-import { Check, Copy, ExternalLink } from "lucide-react"
-import { useState } from "react"
+import { Check, Copy, ExternalLink, Loader2, Play, Square } from "lucide-react"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
+import { Markdown } from "@/components/ai/Markdown"
 import { Button } from "@/components/ui/button"
 import { AI_CHATS, chatLink } from "@/lib/analysis/prompts"
+import { describeAiError, loadProviders } from "@/lib/ai/errors"
+import { REVIEW_SYSTEM } from "@/lib/ai/tasks"
 import { copyText } from "@/lib/clipboard"
+import { useAi } from "@/state/ai"
 
 /**
  * Shows a ready prompt with "Copy" and "Open in …" buttons. Opening always
@@ -12,6 +16,27 @@ import { copyText } from "@/lib/clipboard"
  */
 export function PromptPreview({ prompt }: { prompt: string }) {
   const [copied, setCopied] = useState(false)
+  const { ready, settings, providerLabel, setSettingsOpen } = useAi()
+  const [answer, setAnswer] = useState("")
+  const [running, setRunning] = useState(false)
+  const abort = useRef<AbortController | null>(null)
+
+  /** Runs the prompt with the connected AI and streams the answer in. */
+  const run = async () => {
+    if (!ready) return setSettingsOpen(true)
+    abort.current = new AbortController()
+    setRunning(true)
+    setAnswer("")
+    try {
+      const { streamText } = await loadProviders()
+      await streamText(settings, { system: REVIEW_SYSTEM, prompt, signal: abort.current.signal }, setAnswer)
+    } catch (err) {
+      const e = describeAiError(err)
+      if (e) toast.error(e.message, { description: e.hint })
+    } finally {
+      setRunning(false)
+    }
+  }
 
   const copy = async () => {
     const ok = await copyText(prompt)
@@ -50,8 +75,33 @@ export function PromptPreview({ prompt }: { prompt: string }) {
             {chat.name} <ExternalLink />
           </Button>
         ))}
+        {running ? (
+          <Button variant="secondary" onClick={() => abort.current?.abort()}>
+            <Square /> Stop
+          </Button>
+        ) : (
+          <Button variant="secondary" onClick={run} title={ready ? `Send to ${providerLabel}` : "Connect an AI first"}>
+            <Play /> {ready ? `Run with ${providerLabel}` : "Run here…"}
+          </Button>
+        )}
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">{prompt.length.toLocaleString()} characters</span>
       </div>
+      {(answer || running) && (
+        <section aria-label="AI answer" aria-live="polite" aria-busy={running} className="flex flex-col gap-2 rounded-lg border bg-card p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              {running && <Loader2 className="size-3.5 animate-spin" />} Answer from {providerLabel}
+            </p>
+            {answer && !running && (
+              <Button variant="ghost" size="xs" onClick={async () => ((await copyText(answer)) ? toast.success("Copied") : toast.error("Couldn't copy"))}>
+                <Copy /> Copy
+              </Button>
+            )}
+          </div>
+          <div className="max-h-[50dvh] overflow-y-auto text-sm leading-relaxed">{answer ? <Markdown text={answer} /> : "Thinking…"}</div>
+          <p className="text-[11px] text-muted-foreground">AI can be wrong. Only change your CV where the advice is true for you.</p>
+        </section>
+      )}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import "./App.css"
 import { useCallback, useDeferredValue, useMemo, useState, type ReactNode } from "react"
-import { Download, FileText, FileUp } from "lucide-react"
+import { Download, FileText, FileUp, Sparkles } from "lucide-react"
+import { AiSettingsDialog } from "@/components/ai/AiSettingsDialog"
 import { CheckPanel } from "@/components/check/CheckPanel"
 import { DataMenu } from "@/components/data/DataMenu"
 import { ImportDialog } from "@/components/data/ImportDialog"
@@ -18,6 +19,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { analyzeResume, type IssueTarget } from "@/lib/analysis/analyze"
 import { cn } from "@/lib/utils"
 import { EditorNavProvider, type NavRequest } from "@/state/editor-nav"
+import { useAi } from "@/state/ai"
 import { useWorkspace } from "@/state/workspace"
 
 /** Opens the browser's print dialog ("Save as PDF"). The PDF file name comes from the page title. */
@@ -61,6 +63,7 @@ function ViewTabs({ value, onChange, views, score }: { value: View; onChange: (v
 
 export default function App() {
   const { resume, doc } = useWorkspace()
+  const ai = useAi()
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const [mobileView, setMobileView] = useState<View>("edit")
   const [sideView, setSideView] = useState<Exclude<View, "edit">>("preview")
@@ -114,6 +117,17 @@ export default function App() {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => ai.setSettingsOpen(true)}
+              aria-label={ai.ready ? `AI connected: ${ai.providerLabel}. Change AI settings` : "Connect an AI (optional)"}
+              title={ai.ready ? `AI: ${ai.providerLabel}` : "Connect an AI (optional)"}
+              className="relative"
+            >
+              <Sparkles />
+              {ai.ready && <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-emerald-500 ring-2 ring-background" aria-hidden />}
+            </Button>
             <DataMenu onImport={() => setImporting(true)} />
             <Button onClick={() => printCv(resume.basics.name)} aria-label="Download PDF">
               <Download />
@@ -156,6 +170,7 @@ export default function App() {
       </div>
 
       <ImportDialog open={importing} onOpenChange={setImporting} />
+      <AiSettingsDialog />
 
       {/* Only visible when printing. */}
       <div id="print-root" aria-hidden>
