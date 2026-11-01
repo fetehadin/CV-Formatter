@@ -29,7 +29,7 @@ type Entry = { title: string; current: boolean; bullets: string[] }
 
 /** "Improve with AI" for the bullets of one entry: three rewrites per bullet, each fact-checked. */
 export function ImproveBullets({ entry, onReplace }: { entry: Entry; onReplace: (index: number, text: string) => void }) {
-  const { settings, providerLabel } = useAi()
+  const { settings, providerLabel, onModelChange } = useAi()
   const { resume, doc } = useWorkspace()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState<number | null>(null)
@@ -46,7 +46,7 @@ export function ImproveBullets({ entry, onReplace }: { entry: Entry; onReplace: 
     try {
       const ask = bulletAsk(resume, entry, entry.bullets[index], doc.job)
       const { generateJson } = await loadProviders()
-      const raw = await generateJson(settings, { ...ask, signal: abort.current.signal })
+      const raw = await generateJson(settings, { ...ask, signal: abort.current.signal, onModelChange })
       const parsed = BulletResultSchema.safeParse(raw)
       if (!parsed.success) throw new AiError("The AI's answer was in the wrong shape.", "Try again, or pick a stronger model.")
       setResults((r) => ({ ...r, [index]: parsed.data }))
@@ -125,7 +125,7 @@ export function ImproveBullets({ entry, onReplace }: { entry: Entry; onReplace: 
 
 /** "Draft with AI" for the summary. */
 export function DraftSummary({ onUse }: { onUse: (text: string) => void }) {
-  const { settings, providerLabel } = useAi()
+  const { settings, providerLabel, onModelChange } = useAi()
   const { resume, doc } = useWorkspace()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -138,7 +138,7 @@ export function DraftSummary({ onUse }: { onUse: (text: string) => void }) {
     setBusy(true)
     try {
       const { generateJson } = await loadProviders()
-      const raw = await generateJson(settings, { ...summaryAsk(resume, doc.job), signal: abort.current.signal })
+      const raw = await generateJson(settings, { ...summaryAsk(resume, doc.job), signal: abort.current.signal, onModelChange })
       const parsed = SummaryResultSchema.safeParse(raw)
       if (!parsed.success) throw new AiError("The AI's answer was in the wrong shape.", "Try again, or pick a stronger model.")
       setResult(parsed.data)
