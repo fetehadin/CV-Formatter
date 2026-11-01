@@ -80,3 +80,60 @@ export function chatLink(chat: (typeof AI_CHATS)[number], prompt: string): { hre
   if (chat.url && encodeURIComponent(prompt).length <= MAX_PREFILL_CHARS) return { href: chat.url(prompt), prefilled: true }
   return { href: chat.home, prefilled: false }
 }
+
+// --- Tailoring to one job ---
+
+export type TailorPromptOptions = {
+  redactContact?: boolean
+  coverLetter?: boolean
+}
+
+type TailorJob = { company: string; title: string; description: string }
+type TailorMatch = {
+  score: number | null
+  years: string | null
+  keywords: { name: string; importance: string; found: boolean; where: string[] }[]
+}
+
+function keywordLines(match: TailorMatch): string {
+  const missing = match.keywords.filter((k) => !k.found)
+  const thin = match.keywords.filter((k) => k.found && k.where.every((w) => w === "skills"))
+  const lines = [
+    `- Keyword match: ${match.score ?? "n/a"}%${match.years ? `. The job asks for ${match.years}.` : ""}`,
+    missing.length ? `- Not in my CV: ${missing.map((k) => `${k.name} (${k.importance})`).join(", ")}` : "- Every keyword the check found is already in my CV.",
+  ]
+  if (thin.length) lines.push(`- Listed in skills but never shown in my experience: ${thin.map((k) => k.name).join(", ")}`)
+  return lines.join("\n")
+}
+
+/** A prompt that tailors the CV to one job description without inventing anything. */
+export function buildTailorPrompt(resume: Resume, job: TailorJob, match: TailorMatch, opts: TailorPromptOptions = {}): string {
+  const role = [job.title.trim(), job.company.trim() && `at ${job.company.trim()}`].filter(Boolean).join(" ")
+  const asks = [
+    "**Fit verdict**: 3 sentences. How well do I match, what are my strongest selling points for this job, and what is the biggest gap?",
+    "**Keyword gaps**: for each missing keyword, ask me one yes/no question to check whether I have that experience. Don't assume.",
+    "**Summary for this job**: rewrite my summary for this role (under 60 words), using only facts from my CV.",
+    "**Bullet changes**: a table with columns Section | Original | Tailored | Why. Reword my existing bullets to use the job's language where it's true for me. Point out which bullets to move up, and which to cut because they don't help for this job.",
+    "**Skills order**: my skills reordered so the ones this job cares about come first. Don't add any I haven't listed.",
+  ]
+  if (opts.coverLetter) asks.push("**Cover letter**: under 200 words, specific to this job, using only facts from my CV. Use [placeholders] for anything you'd need me to confirm.")
+
+  return `You are an experienced recruiter helping me tailor my CV to one job${role ? `: ${role}` : ""}.
+
+${GROUND_RULES}
+5. Never add a skill, tool or keyword to my CV just because the job asks for it. If I lack it, say so and suggest how I can honestly address the gap.
+
+## What an automated keyword check found
+${keywordLines(match)}
+
+## What I want back
+${asks.map((a, i) => `${i + 1}. ${a}`).join("\n")}
+
+<job_description>
+${job.description.trim()}
+</job_description>
+
+<cv>
+${resumeToPlainText(resume, { redactContact: opts.redactContact ?? true })}
+</cv>`
+}

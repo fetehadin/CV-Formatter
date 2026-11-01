@@ -91,3 +91,70 @@ export function saveWorkspace(ws: Workspace, storage: Pick<Storage, "setItem"> =
     return false // quota exceeded or storage disabled (private mode)
   }
 }
+
+// --- Document operations (pure: they return a new workspace) ---
+
+const touch = () => new Date().toISOString()
+
+export function emptyJob(patch: Partial<JobTarget> = {}): JobTarget {
+  return { company: "", title: "", url: "", description: "", status: "saved", notes: "", ...patch }
+}
+
+/** "Chapa – Frontend Engineer", falling back to whatever is known. */
+export function jobLabel(job: Pick<JobTarget, "company" | "title">): string {
+  return [job.company.trim(), job.title.trim()].filter(Boolean).join(" – ") || "Untitled job"
+}
+
+export function setActive(ws: Workspace, id: string): Workspace {
+  return ws.documents.some((d) => d.id === id) ? { ...ws, activeId: id } : ws
+}
+
+/** Copies a CV for one job application and switches to the copy. */
+export function createTailoredCopy(ws: Workspace, fromId: string, job: JobTarget): Workspace {
+  const from = ws.documents.find((d) => d.id === fromId)
+  if (!from) return ws
+  const copy = newDocument(structuredClone(from.resume), {
+    title: jobLabel(job),
+    baseId: from.baseId ?? from.id,
+    job,
+  })
+  return { ...ws, activeId: copy.id, documents: [...ws.documents, copy] }
+}
+
+export function duplicateDocument(ws: Workspace, id: string): Workspace {
+  const from = ws.documents.find((d) => d.id === id)
+  if (!from) return ws
+  const copy = newDocument(structuredClone(from.resume), {
+    title: `${from.title} (copy)`,
+    baseId: from.baseId,
+    job: from.job ? { ...from.job } : null,
+  })
+  return { ...ws, activeId: copy.id, documents: [...ws.documents, copy] }
+}
+
+export function addBlankDocument(ws: Workspace, title = "New CV"): Workspace {
+  const doc = newDocument(undefined, { title })
+  return { ...ws, activeId: doc.id, documents: [...ws.documents, doc] }
+}
+
+/** Never leaves the workspace empty: deleting the last CV creates a blank one. */
+export function deleteDocument(ws: Workspace, id: string): Workspace {
+  const documents = ws.documents.filter((d) => d.id !== id)
+  if (documents.length === 0) documents.push(newDocument())
+  const activeId = ws.activeId === id ? documents[0].id : ws.activeId
+  return { ...ws, activeId, documents }
+}
+
+export function renameDocument(ws: Workspace, id: string, title: string): Workspace {
+  return {
+    ...ws,
+    documents: ws.documents.map((d) => (d.id === id ? { ...d, title: title.trim() || d.title, updatedAt: touch() } : d)),
+  }
+}
+
+export function updateJob(ws: Workspace, id: string, patch: Partial<JobTarget>): Workspace {
+  return {
+    ...ws,
+    documents: ws.documents.map((d) => (d.id === id ? { ...d, job: { ...(d.job ?? emptyJob()), ...patch }, updatedAt: touch() } : d)),
+  }
+}
