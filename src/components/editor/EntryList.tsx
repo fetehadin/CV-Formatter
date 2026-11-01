@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { ArrowDown, ArrowUp, ChevronDown, Copy, MoreHorizontal, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -6,7 +6,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { addItem, duplicateItem, insertItem, moveItem, removeItem, updateItem } from "@/lib/resume/edit"
 import { blank, type ListSection, type ListSectionMap } from "@/lib/resume/schema"
 import { cn } from "@/lib/utils"
+import { useEditorNav } from "@/state/editor-nav"
 import { useWorkspace } from "@/state/workspace"
+
+/** Last jump request already handled, shared by all lists so remounts don't re-scroll. */
+let handledSeq = 0
 
 type Props<S extends ListSection> = {
   section: S
@@ -25,6 +29,25 @@ export function EntryList<S extends ListSection>({ section, noun, titleOf, subti
   const items = resume[section] as ListSectionMap[S][]
   // Entries start collapsed when there are several, so the form stays short.
   const [open, setOpen] = useState<Set<string>>(() => new Set(items.length <= 1 ? items.map((i) => i.id) : []))
+
+  // Jump requests from the check panel: open the entry, scroll to it, flash it.
+  const { request } = useEditorNav()
+  const [flash, setFlash] = useState<string | null>(null)
+  useEffect(() => {
+    if (!request?.itemId || request.section !== section || request.seq <= handledSeq) return
+    if (!items.some((i) => i.id === request.itemId)) return
+    handledSeq = request.seq
+    const id = request.itemId
+    setOpen((prev) => new Set(prev).add(id))
+    setFlash(id)
+    requestAnimationFrame(() => document.getElementById(`entry-card-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }))
+  }, [request, section, items])
+
+  useEffect(() => {
+    if (!flash) return
+    const t = setTimeout(() => setFlash(null), 1600)
+    return () => clearTimeout(t)
+  }, [flash])
 
   const toggle = (id: string) =>
     setOpen((prev) => {
@@ -55,7 +78,7 @@ export function EntryList<S extends ListSection>({ section, noun, titleOf, subti
         const subtitle = subtitleOf?.(item)
         const panelId = `entry-${item.id}`
         return (
-          <div key={item.id} className="rounded-lg border bg-card">
+          <div key={item.id} id={`entry-card-${item.id}`} className={cn("scroll-mt-4 rounded-lg border bg-card transition-shadow duration-500", flash === item.id && "ring-3 ring-primary/40")}>
             <div className="flex items-center gap-1 py-1 pr-1 pl-3">
               <button
                 type="button"

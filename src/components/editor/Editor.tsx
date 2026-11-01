@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react"
+import { useEffect, useId, useState, type ReactNode } from "react"
 import { ArrowDown, ArrowUp } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
@@ -8,6 +8,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { moveSection } from "@/lib/resume/edit"
 import { formatRange } from "@/lib/resume/format"
 import { SECTION_LABELS, type Basics, type Resume, type SectionKey } from "@/lib/resume/schema"
+import { useEditorNav } from "@/state/editor-nav"
 import { useWorkspace } from "@/state/workspace"
 import { EntryList } from "./EntryList"
 import { BulletsField, DateRangeField, SingleDateField, TextAreaField, TextField } from "./fields"
@@ -178,10 +179,22 @@ function count(r: Resume, key: SectionKey): number {
 export function Editor() {
   const { resume, updateResume } = useWorkspace()
   const order = resume.sectionOrder
+  const { request } = useEditorNav()
+  const [openSections, setOpenSections] = useState<string[]>(["personal"])
+
+  // A panel asked to show a section: open it, and scroll to it unless an entry will scroll itself.
+  useEffect(() => {
+    if (!request) return
+    const key = request.section === "basics" ? "personal" : request.section
+    setOpenSections((prev) => (prev.includes(key) ? prev : [...prev, key]))
+    if (!request.itemId) {
+      requestAnimationFrame(() => document.getElementById(`section-${key}`)?.scrollIntoView({ behavior: "smooth", block: "start" }))
+    }
+  }, [request])
 
   return (
-    <Accordion multiple defaultValue={["personal"]} className="gap-3">
-      <AccordionItem value="personal" className="rounded-xl border bg-card px-4">
+    <Accordion multiple value={openSections} onValueChange={(v) => setOpenSections(v as string[])} className="gap-3">
+      <AccordionItem id="section-personal" value="personal" className="scroll-mt-4 rounded-xl border bg-card px-4">
         <AccordionTrigger className="items-center py-4 text-base font-semibold hover:no-underline">Personal details</AccordionTrigger>
         <AccordionContent className="pb-5">
           <PersonalFields />
@@ -191,7 +204,7 @@ export function Editor() {
       {order.map((key, index) => {
         const n = count(resume, key)
         return (
-          <AccordionItem key={key} value={key} className="rounded-xl border bg-card px-4">
+          <AccordionItem key={key} id={`section-${key}`} value={key} className="scroll-mt-4 rounded-xl border bg-card px-4">
             <div className="flex items-center gap-1">
               <div className="min-w-0 flex-1">
                 <AccordionTrigger className="items-center py-4 text-base font-semibold hover:no-underline">

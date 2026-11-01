@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react"
+import { Fragment, type CSSProperties, type ReactNode } from "react"
 import { cleanBullets, displayUrl, formatRange, formatYearMonth, splitList, toHref } from "@/lib/resume/format"
 import type { Resume, SectionKey } from "@/lib/resume/schema"
 import { cn } from "@/lib/utils"
@@ -15,6 +15,16 @@ export const PAGE_HEIGHT_MM = 297
 export const MM_TO_PX = 96 / 25.4
 export const PAGE_WIDTH_PX = PAGE_WIDTH_MM * MM_TO_PX
 export const PAGE_HEIGHT_PX = PAGE_HEIGHT_MM * MM_TO_PX
+/** Top and bottom padding of the sheet; matches `.cv-page` in App.css. */
+export const PAGE_PADDING_Y_MM = 12
+/** Printable height of one page once top and bottom padding are removed. */
+export const CONTENT_PER_PAGE_PX = (PAGE_HEIGHT_MM - 2 * PAGE_PADDING_Y_MM) * MM_TO_PX
+
+/** How many A4 pages a sheet of this height (measured on screen) will print on. */
+export function pagesForHeight(heightPx: number): number {
+  const content = heightPx - 2 * PAGE_PADDING_Y_MM * MM_TO_PX
+  return Math.max(1, Math.ceil(content / CONTENT_PER_PAGE_PX - 0.01))
+}
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -218,9 +228,9 @@ export function ResumeContent({ resume }: { resume: Resume }) {
 }
 
 /** An A4 sheet. On screen it has a fixed size; in print the browser paginates it. */
-export function ResumePage({ resume, className }: { resume: Resume; className?: string }) {
+export function ResumePage({ resume, className, style }: { resume: Resume; className?: string; style?: CSSProperties }) {
   return (
-    <div className={cn("cv-page bg-white", className)}>
+    <div className={cn("cv-page bg-white", className)} style={style}>
       <ResumeContent resume={resume} />
     </div>
   )

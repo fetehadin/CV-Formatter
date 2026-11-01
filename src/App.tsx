@@ -1,13 +1,19 @@
 import "./App.css"
-import { useState } from "react"
+import { useCallback, useDeferredValue, useMemo, useState, type ReactNode } from "react"
 import { Download, FileText } from "lucide-react"
+import { CheckPanel } from "@/components/check/CheckPanel"
 import { Editor } from "@/components/editor/Editor"
+import { usePageCount } from "@/components/preview/PageMeter"
 import { PreviewPane } from "@/components/preview/PreviewPane"
 import { ResumePage } from "@/components/resume/ResumeDocument"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { analyzeResume, type IssueTarget } from "@/lib/analysis/analyze"
+import { cn } from "@/lib/utils"
+import { EditorNavProvider, type NavRequest } from "@/state/editor-nav"
 import { useWorkspace } from "@/state/workspace"
 
 /** Opens the browser's print dialog ("Save as PDF"). The PDF file name comes from the page title. */
@@ -18,12 +24,53 @@ function printCv(name: string) {
   window.print()
 }
 
-type MobileView = "edit" | "preview"
+type View = "edit" | "preview" | "check"
+
+function ScoreBadge({ score }: { score: number }) {
+  const tone = score >= 85 ? "bg-emerald-100 text-emerald-800" : score >= 65 ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800"
+  return <Badge className={cn("tabular-nums", tone)}>{score}</Badge>
+}
+
+function ViewTabs({ value, onChange, views, score }: { value: View; onChange: (v: View) => void; views: View[]; score: number }) {
+  const labels: Record<View, ReactNode> = {
+    edit: "Edit",
+    preview: "Preview",
+    check: (
+      <span className="flex items-center gap-1.5">
+        Check <ScoreBadge score={score} />
+      </span>
+    ),
+  }
+  return (
+    <Tabs value={value} onValueChange={(v) => onChange(v as View)}>
+      <TabsList>
+        {views.map((v) => (
+          <TabsTrigger key={v} value={v}>
+            {labels[v]}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
+  )
+}
 
 export default function App() {
   const { resume } = useWorkspace()
   const isDesktop = useMediaQuery("(min-width: 768px)")
-  const [mobileView, setMobileView] = useState<MobileView>("edit")
+  const [mobileView, setMobileView] = useState<View>("edit")
+  const [sideView, setSideView] = useState<Exclude<View, "edit">>("preview")
+
+  const { pages, meter } = usePageCount(resume)
+  // The check runs on a deferred copy, so typing never waits for it.
+  const deferredResume = useDeferredValue(resume)
+  const report = useMemo(() => analyzeResume(deferredResume, { pages }), [deferredResume, pages])
+
+  const [navRequest, setNavRequest] = useState<NavRequest | null>(null)
+  const goTo = useCallback((target: IssueTarget) => {
+    setMobileView("edit")
+    setNavRequest((prev) => ({ ...target, seq: (prev?.seq ?? 0) + 1 }))
+  }, [])
+  const nav = useMemo(() => ({ request: navRequest, goTo }), [navRequest, goTo])
 
   const editor = (
     <div className="h-full overflow-y-auto bg-background">
@@ -32,24 +79,18 @@ export default function App() {
       </div>
     </div>
   )
+  const side = (view: View) => (view === "check" ? <CheckPanel report={report} /> : <PreviewPane pages={pages} />)
 
   return (
-    <>
+    <EditorNavProvider value={nav}>
       <div id="app-root" className="flex h-dvh flex-col bg-background">
         <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
           <div className="flex items-center gap-2">
             <FileText className="size-5 text-primary" aria-hidden />
-            <h1 className="text-base font-semibold tracking-tight">CV Formatter</h1>
+            <h1 className="hidden text-base font-semibold tracking-tight sm:block">CV Formatter</h1>
           </div>
 
-          {!isDesktop && (
-            <Tabs value={mobileView} onValueChange={(v) => setMobileView(v as MobileView)}>
-              <TabsList>
-                <TabsTrigger value="edit">Edit</TabsTrigger>
-                <TabsTrigger value="preview">Preview</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
+          {!isDesktop && <ViewTabs value={mobileView} onChange={setMobileView} views={["edit", "preview", "check"]} score={report.score} />}
 
           <Button onClick={() => printCv(resume.basics.name)} aria-label="Download PDF">
             <Download />
@@ -65,21 +106,30 @@ export default function App() {
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize="55%" minSize="30%">
-                <PreviewPane />
+                <div className="flex h-full flex-col">
+                  <div className="flex shrink-0 items-center justify-between border-b px-4 py-2">
+                    <ViewTabs value={sideView} onChange={(v) => setSideView(v as Exclude<View, "edit">)} views={["preview", "check"]} score={report.score} />
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {pages} page{pages > 1 ? "s" : ""} · A4
+                    </span>
+                  </div>
+                  <div className="min-h-0 flex-1">{side(sideView)}</div>
+                </div>
               </ResizablePanel>
             </ResizablePanelGroup>
           ) : mobileView === "edit" ? (
             editor
           ) : (
-            <PreviewPane />
+            side(mobileView)
           )}
         </main>
+        {meter}
       </div>
 
       {/* Only visible when printing. */}
       <div id="print-root" aria-hidden>
         <ResumePage resume={resume} />
       </div>
-    </>
+    </EditorNavProvider>
   )
 }
