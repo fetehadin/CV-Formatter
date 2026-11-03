@@ -18,23 +18,29 @@ export function MoveNotice() {
 
   useEffect(() => {
     if (old) return
-    const incoming = readTransfer(window.location.hash)
-    if (!incoming) return
-    // Drop the CV data from the address bar and history straight away.
-    history.replaceState(null, "", window.location.pathname + window.location.search)
-    const n = incoming.documents.length
-    toast(`Add ${n} CV${n > 1 ? "s" : ""} from your old address?`, {
-      description: "They'll sit next to anything already here. Nothing is overwritten.",
-      duration: Infinity,
-      action: {
-        label: "Add them",
-        onClick: () => {
-          updateWorkspace((ws) => mergeWorkspace(ws, incoming))
-          toast.success(`Moved ${n} CV${n > 1 ? "s" : ""}. Welcome to ${APP_NAME}.`)
+    const pickUp = () => {
+      const incoming = readTransfer(window.location.hash)
+      if (!incoming) return
+      // Drop the CV data from the address bar and history straight away.
+      history.replaceState(null, "", window.location.pathname + window.location.search)
+      const n = incoming.documents.length
+      toast(`Add ${n} CV${n > 1 ? "s" : ""} from your old address?`, {
+        description: "They'll sit next to anything already here. Nothing is overwritten.",
+        duration: Infinity,
+        action: {
+          label: "Add them",
+          onClick: () => {
+            updateWorkspace((ws) => mergeWorkspace(ws, incoming))
+            toast.success(`Moved ${n} CV${n > 1 ? "s" : ""}. Welcome to ${APP_NAME}.`)
+          },
         },
-      },
-      cancel: { label: "Not now", onClick: () => {} },
-    })
+        cancel: { label: "Not now", onClick: () => {} },
+      })
+    }
+    pickUp()
+    // The link may also be opened in a tab that already has the app.
+    window.addEventListener("hashchange", pickUp)
+    return () => window.removeEventListener("hashchange", pickUp)
   }, [old, updateWorkspace])
 
   if (!old) return null
