@@ -1,3 +1,5 @@
+import type { SectionKey } from "@/lib/resume/schema"
+
 /**
  * Word lists used by the CV checker. Plain data, so they are easy to review
  * and extend.
@@ -81,3 +83,19 @@ export const BUZZWORDS = [
 ]
 
 export const FIRST_PERSON = /\b(i|me|my|mine|myself)\b/i
+
+/** Section titles ATS parsers recognise, beyond our defaults. Lowercase, "&" written as "and". */
+const STANDARD_HEADINGS: Record<SectionKey, string[]> = {
+  summary: ["summary", "professional summary", "profile", "professional profile", "career summary", "about me", "about", "objective", "career objective", "personal statement"],
+  experience: ["experience", "work experience", "professional experience", "employment", "employment history", "work history", "career history", "relevant experience"],
+  education: ["education", "education and training", "academic background", "qualifications", "academic qualifications"],
+  projects: ["projects", "personal projects", "selected projects", "key projects", "academic projects", "side projects"],
+  skills: ["skills", "technical skills", "key skills", "core skills", "core competencies", "competencies", "skills and tools"],
+  certifications: ["certifications", "certificates", "licenses and certifications", "licences and certifications", "certifications and training", "courses"],
+  languages: ["languages", "language skills"],
+}
+
+export function isStandardHeading(key: SectionKey, title: string): boolean {
+  const t = title.toLowerCase().replace(/&/g, "and").replace(/\s+/g, " ").trim()
+  return STANDARD_HEADINGS[key].includes(t)
+}

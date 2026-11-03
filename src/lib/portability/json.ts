@@ -59,7 +59,7 @@ export function toJsonResume(r: Resume): object {
     skills: r.skills.map((g) => ({ name: g.name, keywords: splitList(g.items) })),
     certificates: r.certifications.map((c) => ({ name: c.name, issuer: c.issuer || undefined, date: toIsoDate(c.date), url: c.link ? toHref(c.link) : undefined })),
     languages: r.languages.map((l) => ({ language: l.language, fluency: l.fluency || undefined })),
-    meta: { canonical: "cv-formatter", sectionOrder: r.sectionOrder },
+    meta: { canonical: "cv-formatter", sectionOrder: r.sectionOrder, design: r.design },
   }
 }
 
@@ -115,6 +115,7 @@ export function fromJsonResume(input: unknown): Resume {
     certifications: arr(j.certificates).map((c) => ({ id: newId(), name: str(c.name), issuer: str(c.issuer), date: fromIsoDate(c.date), link: str(c.url) })),
     languages: arr(j.languages).map((l) => ({ id: newId(), language: str(l.language), fluency: str(l.fluency) })),
     sectionOrder: obj(j.meta).sectionOrder,
+    design: obj(j.meta).design,
   })
 }
 

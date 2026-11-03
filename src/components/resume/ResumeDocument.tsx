@@ -1,38 +1,26 @@
+import "./resume.css"
 import { Fragment, type CSSProperties, type ReactNode } from "react"
+import { FONTS, pageGeometry, PAPERS, SPACINGS, type Design } from "@/lib/resume/design"
 import { cleanBullets, displayUrl, formatRange, formatYearMonth, splitList, toHref } from "@/lib/resume/format"
-import type { Resume, SectionKey } from "@/lib/resume/schema"
+import { sectionTitle, type Resume, type SectionKey } from "@/lib/resume/schema"
 import { cn } from "@/lib/utils"
 
 /**
- * The printable CV. One column, real text, standard headings and fonts, so
- * applicant tracking systems (ATS) read it in the right order.
+ * The printable CV. One column, real text, standard headings and system
+ * fonts, so applicant tracking systems (ATS) read it in the right order.
  *
+ * The look comes from `resume.design`: the template is a `data-template`
+ * variant in resume.css, and size, spacing and colour are CSS variables.
  * Sizes are in mm/pt so the screen preview and the printed PDF match.
  */
 
-export const PAGE_WIDTH_MM = 210
-export const PAGE_HEIGHT_MM = 297
-export const MM_TO_PX = 96 / 25.4
-export const PAGE_WIDTH_PX = PAGE_WIDTH_MM * MM_TO_PX
-export const PAGE_HEIGHT_PX = PAGE_HEIGHT_MM * MM_TO_PX
-/** Top and bottom padding of the sheet; matches `.cv-page` in App.css. */
-export const PAGE_PADDING_Y_MM = 12
-/** Printable height of one page once top and bottom padding are removed. */
-export const CONTENT_PER_PAGE_PX = (PAGE_HEIGHT_MM - 2 * PAGE_PADDING_Y_MM) * MM_TO_PX
-
-/** How many A4 pages a sheet of this height (measured on screen) will print on. */
-export function pagesForHeight(heightPx: number): number {
-  const content = heightPx - 2 * PAGE_PADDING_Y_MM * MM_TO_PX
-  return Math.max(1, Math.ceil(content / CONTENT_PER_PAGE_PX - 0.01))
-}
-
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mb-[3.5mm]">
-      <h2 className="mb-[1.5mm] break-after-avoid border-b border-[#9ca3af] pb-[0.5mm] text-[11pt] font-bold tracking-wide text-[#1E3A8A] uppercase">
-        {title}
+    <section className="cv-section">
+      <h2 className="cv-heading">
+        <span>{title}</span>
       </h2>
-      <div className="flex flex-col gap-[2.5mm]">{children}</div>
+      <div className="cv-entries">{children}</div>
     </section>
   )
 }
@@ -41,11 +29,11 @@ function Bullets({ items }: { items: string[] }) {
   const clean = cleanBullets(items)
   if (clean.length === 0) return null
   return (
-    <ul className="mt-[0.8mm] flex flex-col gap-[0.4mm]">
+    <ul className="cv-bullets">
       {clean.map((line, i) => (
         // A real "•" character (not a CSS marker) so it exists in the PDF's text and ATS can spot bullets.
-        <li key={i} className="flex break-inside-avoid">
-          <span className="w-[4.5mm] shrink-0 pl-[1mm]">•</span>
+        <li key={i} className="cv-bullet">
+          <span className="cv-dot">•</span>
           <span>{line}</span>
         </li>
       ))}
@@ -53,18 +41,33 @@ function Bullets({ items }: { items: string[] }) {
   )
 }
 
-/** Title row with a right-aligned date, and an optional italic subtitle row. */
-function EntryHead({ title, date, subtitle, aside }: { title: ReactNode; date?: string; subtitle?: ReactNode; aside?: string }) {
+/**
+ * Title row with a right-aligned date, and an optional subtitle row.
+ * The compact template puts the subtitle on the title row to save a line.
+ */
+function EntryHead({ title, date, subtitle, aside, inline }: { title: ReactNode; date?: string; subtitle?: ReactNode; aside?: string; inline: boolean }) {
+  if (inline) {
+    return (
+      <div className="cv-entry-head cv-row">
+        <span>
+          <span className="cv-title">{title}</span>
+          {subtitle && <span className="cv-sub">, {subtitle}</span>}
+          {aside && <span className="cv-aside"> · {aside}</span>}
+        </span>
+        {date && <span className="cv-date">{date}</span>}
+      </div>
+    )
+  }
   return (
-    <div className="break-inside-avoid break-after-avoid">
-      <div className="flex items-baseline justify-between gap-4 font-bold">
-        <span>{title}</span>
-        {date && <span className="shrink-0 font-normal italic">{date}</span>}
+    <div className="cv-entry-head">
+      <div className="cv-row">
+        <span className="cv-title">{title}</span>
+        {date && <span className="cv-date">{date}</span>}
       </div>
       {(subtitle || aside) && (
-        <div className="flex items-baseline justify-between gap-4 italic">
+        <div className="cv-row cv-sub">
           <span>{subtitle}</span>
-          {aside && <span className="shrink-0">{aside}</span>}
+          {aside && <span className="cv-aside">{aside}</span>}
         </div>
       )}
     </div>
@@ -73,7 +76,7 @@ function EntryHead({ title, date, subtitle, aside }: { title: ReactNode; date?: 
 
 function Link({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <a href={toHref(href)} className="text-[#1E3A8A] no-underline">
+    <a href={toHref(href)} className="cv-link">
       {children}
     </a>
   )
@@ -82,31 +85,41 @@ function Link({ href, children }: { href: string; children: ReactNode }) {
 function join(parts: ReactNode[], sep = " | ") {
   return parts.map((p, i) => (
     <Fragment key={i}>
-      {i > 0 && <span className="text-[#4b5563]">{sep}</span>}
+      {i > 0 && <span className="cv-sep">{sep}</span>}
       {p}
     </Fragment>
   ))
 }
 
 function renderSection(key: SectionKey, r: Resume): ReactNode {
+  const { dateStyle, template } = r.design
+  const inline = template === "compact"
+  const range = (x: Resume["experience"][number] | Resume["education"][number] | Resume["projects"][number]) => formatRange(x.start, x.end, x.current, dateStyle)
+  const title = sectionTitle(r, key)
+
   switch (key) {
     case "summary":
       return r.summary.trim() ? (
-        <Section title="Summary">
-          <p className="text-justify whitespace-pre-line">{r.summary.trim()}</p>
+        <Section title={title}>
+          <p className="cv-summary">{r.summary.trim()}</p>
         </Section>
       ) : null
 
     case "experience": {
       const items = r.experience.filter((x) => x.role || x.company)
       return items.length ? (
-        <Section title="Work Experience">
-          {items.map((x) => (
-            <div key={x.id}>
-              <EntryHead title={x.company || x.role} date={formatRange(x.start, x.end, x.current)} subtitle={x.company ? x.role : ""} aside={x.location} />
-              <Bullets items={x.bullets} />
-            </div>
-          ))}
+        <Section title={title}>
+          {items.map((x) => {
+            // Modern and compact lead with the job title; classic and elegant with the company.
+            const roleFirst = template === "modern" || template === "compact"
+            const [main, sub] = roleFirst ? [x.role || x.company, x.role ? x.company : ""] : [x.company || x.role, x.company ? x.role : ""]
+            return (
+              <div key={x.id}>
+                <EntryHead inline={inline} title={main} date={range(x)} subtitle={sub} aside={x.location} />
+                <Bullets items={x.bullets} />
+              </div>
+            )
+          })}
         </Section>
       ) : null
     }
@@ -114,10 +127,10 @@ function renderSection(key: SectionKey, r: Resume): ReactNode {
     case "education": {
       const items = r.education.filter((e) => e.school || e.degree)
       return items.length ? (
-        <Section title="Education">
+        <Section title={title}>
           {items.map((e) => (
             <div key={e.id}>
-              <EntryHead title={e.school || e.degree} date={formatRange(e.start, e.end, e.current)} subtitle={e.school ? e.degree : ""} aside={e.location} />
+              <EntryHead inline={inline} title={e.school || e.degree} date={range(e)} subtitle={e.school ? e.degree : ""} aside={e.location} />
               <Bullets items={e.bullets} />
             </div>
           ))}
@@ -128,22 +141,23 @@ function renderSection(key: SectionKey, r: Resume): ReactNode {
     case "projects": {
       const items = r.projects.filter((p) => p.name)
       return items.length ? (
-        <Section title="Projects">
+        <Section title={title}>
           {items.map((p) => (
             <div key={p.id}>
               <EntryHead
+                inline={inline}
                 title={
                   <>
                     {p.name}
                     {p.link && (
-                      <span className="font-normal">
+                      <span className="cv-normal">
                         {" | "}
                         <Link href={p.link}>{displayUrl(p.link)}</Link>
                       </span>
                     )}
                   </>
                 }
-                date={formatRange(p.start, p.end, p.current)}
+                date={range(p)}
                 subtitle={splitList(p.tech).join(", ")}
               />
               <Bullets items={p.bullets} />
@@ -156,11 +170,11 @@ function renderSection(key: SectionKey, r: Resume): ReactNode {
     case "skills": {
       const groups = r.skills.map((g) => ({ ...g, list: splitList(g.items) })).filter((g) => g.list.length)
       return groups.length ? (
-        <Section title="Skills">
-          <div className="flex flex-col gap-[0.6mm]">
+        <Section title={title}>
+          <div className="cv-list">
             {groups.map((g) => (
               <p key={g.id}>
-                {g.name.trim() && <span className="font-bold">{g.name.trim()}: </span>}
+                {g.name.trim() && <span className="cv-title">{g.name.trim()}: </span>}
                 {g.list.join(", ")}
               </p>
             ))}
@@ -172,12 +186,12 @@ function renderSection(key: SectionKey, r: Resume): ReactNode {
     case "certifications": {
       const items = r.certifications.filter((c) => c.name)
       return items.length ? (
-        <Section title="Certifications">
-          <div className="flex flex-col gap-[0.6mm]">
+        <Section title={title}>
+          <div className="cv-list">
             {items.map((c) => (
-              <div key={c.id} className="flex items-baseline justify-between gap-4 break-inside-avoid">
+              <div key={c.id} className="cv-row cv-keep">
                 <span>
-                  <span className="font-bold">{c.name}</span>
+                  <span className="cv-title">{c.name}</span>
                   {c.issuer && <>, {c.issuer}</>}
                   {c.link && (
                     <>
@@ -186,7 +200,7 @@ function renderSection(key: SectionKey, r: Resume): ReactNode {
                     </>
                   )}
                 </span>
-                <span className="shrink-0 italic">{formatYearMonth(c.date)}</span>
+                <span className="cv-date">{formatYearMonth(c.date, dateStyle)}</span>
               </div>
             ))}
           </div>
@@ -197,12 +211,22 @@ function renderSection(key: SectionKey, r: Resume): ReactNode {
     case "languages": {
       const items = r.languages.filter((l) => l.language)
       return items.length ? (
-        <Section title="Languages">
+        <Section title={title}>
           <p>{items.map((l) => (l.fluency ? `${l.language} (${l.fluency})` : l.language)).join(", ")}</p>
         </Section>
       ) : null
     }
   }
+}
+
+/** CSS variables for a design. */
+function designVars(d: Design): CSSProperties {
+  return {
+    "--cv-font": FONTS[d.font].stack,
+    "--cv-fs": `${d.fontSize}pt`,
+    "--cv-space": SPACINGS[d.spacing],
+    "--cv-accent": d.accent,
+  } as CSSProperties
 }
 
 export function ResumeContent({ resume }: { resume: Resume }) {
@@ -213,14 +237,22 @@ export function ResumeContent({ resume }: { resume: Resume }) {
       {displayUrl(url)}
     </Link>
   ))
+  // Modern and compact fit every contact detail on one line.
+  const oneLine = resume.design.template === "modern" || resume.design.template === "compact"
 
   return (
-    <div className="font-[Arial,Helvetica,sans-serif] text-[10pt] leading-[1.35] text-[#111827]">
-      <header className="mb-[4mm] flex flex-col items-center text-center">
-        <h1 className="text-[20pt] leading-tight font-bold tracking-wide text-[#1E3A8A] uppercase">{b.name || "Your Name"}</h1>
-        {b.headline && <p className="mt-[0.5mm] text-[11pt]">{b.headline}</p>}
-        {line1.length > 0 && <p className="mt-[1mm]">{join(line1)}</p>}
-        {line2.length > 0 && <p>{join(line2)}</p>}
+    <div className="cv" data-template={resume.design.template} style={designVars(resume.design)}>
+      <header className="cv-header">
+        <h1 className="cv-name">{b.name || "Your Name"}</h1>
+        {b.headline && <p className="cv-headline">{b.headline}</p>}
+        {oneLine ? (
+          line1.length + line2.length > 0 && <p className="cv-contact">{join([...line1, ...line2])}</p>
+        ) : (
+          <>
+            {line1.length > 0 && <p className="cv-contact">{join(line1)}</p>}
+            {line2.length > 0 && <p>{join(line2)}</p>}
+          </>
+        )}
       </header>
       {resume.sectionOrder.map((key) => (
         <Fragment key={key}>{renderSection(key, resume)}</Fragment>
@@ -229,11 +261,24 @@ export function ResumeContent({ resume }: { resume: Resume }) {
   )
 }
 
-/** An A4 sheet. On screen it has a fixed size; in print the browser paginates it. */
+/**
+ * One sheet of paper. On screen it has a fixed width; in print the browser
+ * paginates it, and `box-decoration-break: clone` (resume.css) repeats the
+ * top and bottom padding on every page.
+ */
 export function ResumePage({ resume, className, style }: { resume: Resume; className?: string; style?: CSSProperties }) {
+  const g = pageGeometry(resume.design)
   return (
-    <div className={cn("cv-page bg-white", className)} style={style}>
+    <div
+      className={cn("cv-page bg-white", className)}
+      style={{ width: `${g.widthMm}mm`, minHeight: `${g.heightMm}mm`, padding: `${g.padYMm}mm ${g.padXMm}mm`, ...style }}
+    >
       <ResumeContent resume={resume} />
     </div>
   )
+}
+
+/** The `@page` rule for the CV's paper size. Rendered inside the print-only copy. */
+export function PrintPageStyle({ resume }: { resume: Resume }) {
+  return <style>{`@page { size: ${PAPERS[resume.design.paper].css} portrait; margin: 0; }`}</style>
 }

@@ -1,15 +1,24 @@
+import type { DateStyle } from "./design"
 import type { YearMonth } from "./schema"
 
-/** "Sep 2022", "2022", or "" */
-export function formatYearMonth(d: YearMonth): string {
+const LONG_MONTHS: Record<string, string> = {
+  Jan: "January", Feb: "February", Mar: "March", Apr: "April", May: "May", Jun: "June",
+  Jul: "July", Aug: "August", Sep: "September", Oct: "October", Nov: "November", Dec: "December",
+}
+
+/** "Sep 2022" (short), "September 2022" (long), "09/2022" (numeric), "2022", or "" */
+export function formatYearMonth(d: YearMonth, style: DateStyle = "short"): string {
   if (!d.year) return ""
-  return d.month ? `${d.month} ${d.year}` : d.year
+  if (!d.month) return d.year
+  if (style === "long") return `${LONG_MONTHS[d.month] ?? d.month} ${d.year}`
+  if (style === "numeric" && d.month in MONTH_INDEX) return `${String(MONTH_INDEX[d.month] + 1).padStart(2, "0")}/${d.year}`
+  return `${d.month} ${d.year}`
 }
 
 /** "Sep 2022 – Present", "2018 – 2022", "2022", or "" */
-export function formatRange(start: YearMonth, end: YearMonth, current: boolean): string {
-  const from = formatYearMonth(start)
-  const to = current ? "Present" : formatYearMonth(end)
+export function formatRange(start: YearMonth, end: YearMonth, current: boolean, style: DateStyle = "short"): string {
+  const from = formatYearMonth(start, style)
+  const to = current ? "Present" : formatYearMonth(end, style)
   if (from && to) return `${from} – ${to}`
   return from || to
 }

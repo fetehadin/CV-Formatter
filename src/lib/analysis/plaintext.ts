@@ -1,5 +1,5 @@
 import { cleanBullets, displayUrl, formatRange, formatYearMonth, splitList } from "@/lib/resume/format"
-import { SECTION_LABELS, type Resume, type SectionKey } from "@/lib/resume/schema"
+import { sectionTitle, type Resume, type SectionKey, type YearMonth } from "@/lib/resume/schema"
 
 export type PlainTextOptions = {
   /** Replace email, phone and profile links with placeholders (for pasting into AI tools). */
@@ -8,6 +8,9 @@ export type PlainTextOptions = {
 
 function sectionLines(key: SectionKey, r: Resume): string[] {
   const bullets = (list: string[]) => cleanBullets(list).map((b) => `- ${b}`)
+  const style = r.design.dateStyle
+  const range = (x: { start: YearMonth; end: YearMonth; current: boolean }) =>
+    formatRange(x.start, x.end, x.current, style)
   switch (key) {
     case "summary":
       return r.summary.trim() ? [r.summary.trim()] : []
@@ -15,7 +18,7 @@ function sectionLines(key: SectionKey, r: Resume): string[] {
       return r.experience
         .filter((x) => x.role || x.company)
         .flatMap((x) => [
-          [x.role, x.company].filter(Boolean).join(" | ") + suffix(formatRange(x.start, x.end, x.current), x.location),
+          [x.role, x.company].filter(Boolean).join(" | ") + suffix(range(x), x.location),
           ...bullets(x.bullets),
           "",
         ])
@@ -23,7 +26,7 @@ function sectionLines(key: SectionKey, r: Resume): string[] {
       return r.education
         .filter((e) => e.school || e.degree)
         .flatMap((e) => [
-          [e.degree, e.school].filter(Boolean).join(" | ") + suffix(formatRange(e.start, e.end, e.current), e.location),
+          [e.degree, e.school].filter(Boolean).join(" | ") + suffix(range(e), e.location),
           ...bullets(e.bullets),
           "",
         ])
@@ -31,7 +34,7 @@ function sectionLines(key: SectionKey, r: Resume): string[] {
       return r.projects
         .filter((p) => p.name)
         .flatMap((p) => [
-          p.name + suffix(formatRange(p.start, p.end, p.current)),
+          p.name + suffix(range(p)),
           ...(p.tech.trim() ? [`Tech: ${splitList(p.tech).join(", ")}`] : []),
           ...bullets(p.bullets),
           "",
@@ -44,7 +47,7 @@ function sectionLines(key: SectionKey, r: Resume): string[] {
     case "certifications":
       return r.certifications
         .filter((c) => c.name)
-        .map((c) => [c.name, c.issuer].filter(Boolean).join(", ") + suffix(formatYearMonth(c.date)))
+        .map((c) => [c.name, c.issuer].filter(Boolean).join(", ") + suffix(formatYearMonth(c.date, style)))
     case "languages":
       return r.languages.filter((l) => l.language).map((l) => (l.fluency ? `${l.language} (${l.fluency})` : l.language))
   }
@@ -77,7 +80,7 @@ export function resumeToPlainText(r: Resume, opts: PlainTextOptions = {}): strin
     const lines = sectionLines(key, r)
     if (!lines.length) continue
     while (lines.at(-1) === "") lines.pop()
-    out.push("", SECTION_LABELS[key].toUpperCase(), ...lines)
+    out.push("", sectionTitle(r, key).toUpperCase(), ...lines)
   }
   return out.join("\n")
 }
