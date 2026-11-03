@@ -31,7 +31,7 @@ export function DataMenu({ onImport }: { onImport: () => void }) {
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
-            downloadFile(`cv-formatter-backup-${date}.json`, JSON.stringify(toBackup(workspace), null, 2))
+            downloadFile(`honest-cv-backup-${date}.json`, JSON.stringify(toBackup(workspace), null, 2))
             toast.success("Backup saved", { description: "All your CV versions and jobs. Import it to restore." })
           }}
         >

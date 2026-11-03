@@ -1,8 +1,8 @@
-# CV Formatter
+# Honest CV
 
 A free, private CV builder that helps you write an ATS-friendly CV and tailor it to each job **without inventing anything**. Everything runs in your browser. There is no account, no server, and your CV never leaves your device unless you connect an AI yourself.
 
-**Live demo:** https://cv-formatter-two.vercel.app/
+**Live:** https://cv.fetehadin.com
 
 ## Why
 
@@ -10,7 +10,7 @@ A free, private CV builder that helps you write an ATS-friendly CV and tailor it
 - Recruiters prefer CVs tailored to the job, but most people spend under 30 minutes tailoring.
 - AI-padded CVs are making recruiters suspicious. Fake keywords hurt more than they help.
 
-CV Formatter checks your CV, shows how it matches a job, and helps you reword it honestly.
+Honest CV checks your CV, shows how it matches a job, and helps you reword it honestly.
 
 ## Features
 
@@ -62,7 +62,12 @@ pnpm dev          # http://localhost:5173
 pnpm test         # unit tests
 pnpm lint && pnpm typecheck
 pnpm build
+pnpm run deploy   # build + publish to Cloudflare Workers (cv.fetehadin.com)
 ```
+
+### Hosting
+
+A static build served by Cloudflare Workers static assets (`wrangler.jsonc`), with the custom domain `cv.fetehadin.com`. `public/_headers` sets security and cache headers. The old Vercel address shows a "Move my CVs" banner that carries saved CVs to the new domain in the URL fragment (never sent to a server).
 
 ### Project layout
 

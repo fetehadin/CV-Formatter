@@ -1,11 +1,12 @@
 import "./App.css"
 import { useCallback, useDeferredValue, useMemo, useState, type ReactNode } from "react"
 import { toast } from "sonner"
-import { Download, FileText, FileUp, ShieldCheck, Sparkles } from "lucide-react"
+import { Download, FileUp, ShieldCheck, Sparkles } from "lucide-react"
 import { AiSettingsDialog } from "@/components/ai/AiSettingsDialog"
 import { CheckPanel } from "@/components/check/CheckPanel"
 import { DataMenu } from "@/components/data/DataMenu"
 import { ImportDialog } from "@/components/data/ImportDialog"
+import { MoveNotice } from "@/components/data/MoveNotice"
 import { DocumentSwitcher } from "@/components/documents/DocumentSwitcher"
 import { Editor } from "@/components/editor/Editor"
 import { usePageCount } from "@/components/preview/PageMeter"
@@ -22,6 +23,7 @@ import { analyzeResume, type IssueTarget } from "@/lib/analysis/analyze"
 import { PAPERS } from "@/lib/resume/design"
 import { exampleResume } from "@/lib/resume/example"
 import { newDocument } from "@/lib/resume/workspace"
+import { APP_NAME } from "@/lib/site"
 import { cn } from "@/lib/utils"
 import { EditorNavProvider, type NavRequest } from "@/state/editor-nav"
 import { useAi } from "@/state/ai"
@@ -139,10 +141,11 @@ export default function App() {
   return (
     <EditorNavProvider value={nav}>
       <div id="app-root" className="flex h-dvh flex-col bg-background">
+        <MoveNotice />
         <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
           <div className="flex min-w-0 items-center gap-2">
-            <FileText className="size-5 shrink-0 text-primary" aria-hidden />
-            <h1 className="hidden text-base font-semibold tracking-tight lg:block">CV Formatter</h1>
+            <img src="/favicon.svg" alt="" className="size-6 shrink-0" />
+            <h1 className="hidden text-base font-semibold tracking-tight lg:block">{APP_NAME}</h1>
             <span className="hidden text-muted-foreground lg:block" aria-hidden>/</span>
             <DocumentSwitcher />
           </div>

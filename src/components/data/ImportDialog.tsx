@@ -174,7 +174,7 @@ export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
     try {
       const data = readJson(await file.text())
       if (data.kind === "unknown") {
-        toast.error("This file isn't a CV we recognise.", { description: "Use a JSON Resume file or a CV Formatter backup." })
+        toast.error("This file isn't a CV we recognise.", { description: "Use a JSON Resume file or an Honest CV backup." })
       } else if (data.kind === "backup") {
         updateWorkspace((ws) => mergeWorkspace(ws, data.workspace))
         toast.success(`Added ${data.workspace.documents.length} CV version${data.workspace.documents.length > 1 ? "s" : ""} from the backup`)
@@ -228,7 +228,7 @@ export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
             <TabsContent value="json" className="flex flex-col gap-2 pt-2">
               <FilePicker accept="application/json,.json" label="Choose a JSON file" icon={<FileJson className="size-6 text-muted-foreground" />} busy={busy} onFile={readJsonFile} />
               <p className="text-xs text-muted-foreground">
-                Works with <a className="underline" href="https://jsonresume.org" target="_blank" rel="noopener noreferrer">JSON Resume</a> files from other tools, and with CV Formatter backups (which add all their CV versions).
+                Works with <a className="underline" href="https://jsonresume.org" target="_blank" rel="noopener noreferrer">JSON Resume</a> files from other tools, and with Honest CV backups (which add all their CV versions).
               </p>
             </TabsContent>
           </Tabs>
