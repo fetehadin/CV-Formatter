@@ -10,7 +10,9 @@ Notes for AI coding agents working in this repo.
 
 ## What this is
 
-CV Formatter: a free, private, client-only CV builder. No backend, no account. Everything lives in `localStorage`. Live at https://cv-formatter-two.vercel.app/ (Vercel, static Vite build).
+Honest CV (formerly "CV Formatter"): a free, private, client-only CV builder. No backend, no account. Everything lives in `localStorage`. Live at https://cv.fetehadin.com (Cloudflare Workers static assets, `wrangler.jsonc`; deploy with `pnpm run deploy`). The old Vercel URL (https://cv-formatter-two.vercel.app) shows a "Move my CVs" banner (`src/components/data/MoveNotice.tsx`, `src/lib/portability/transfer.ts`).
+
+Keep the `cvFormatter.*` localStorage keys and the `cv-formatter-backup` format id: renaming them would lose users' saved data.
 
 Product principles, which every change should keep:
 1. **ATS-safe output.** One column, real selectable text, standard headings, a real `•` character for bullets, no icons, images or tables in the CV.

@@ -1,0 +1,13 @@
+// Cloudflare Workers (static assets only, no server code).
+// Deploy: `pnpm run deploy`. Serves dist/ at https://cv.fetehadin.com
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "honest-cv",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    // Unknown paths get index.html, so deep links still load the app.
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [{ "pattern": "cv.fetehadin.com", "custom_domain": true }]
+}
