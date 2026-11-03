@@ -20,6 +20,14 @@ CV Formatter checks your CV, shows how it matches a job, and helps you reword it
 - Live A4 preview, with markers where page 2 starts
 - One-column, text-based PDF (via your browser's "Save as PDF") that ATS can read
 
+**Design**
+- Four ATS-safe templates: Classic, Modern, Compact and Elegant
+- Six system fonts (Arial, Calibri, Verdana, Georgia, Garamond, Times New Roman), text size 9–12 pt, accent colour
+- Spacing, margins, A4 or US Letter, and date style (Sep 2022 / September 2022 / 09/2022)
+- Rename section titles (Check warns if a title is one ATS may not recognise)
+- **Fit to one page**: finds the least drastic spacing, margin and size change that fits, measured on the real layout
+- Each CV version keeps its own design, or use one design on all of them
+
 **Check** (offline, rule-based)
 - Score out of 100 with clear fixes: weak openers ("Responsible for…"), missing numbers, pronouns, clichés, dates, duplicate skills, length
 - "Fix" jumps straight to the problem in the editor
@@ -59,12 +67,12 @@ pnpm build
 ### Project layout
 
 ```
-src/lib/resume/      CV data model (zod), storage + migration, formatting, edit helpers
+src/lib/resume/      CV data model (zod), design + page geometry, storage + migration, formatting, edit helpers
 src/lib/analysis/    CV checker, plain-text (ATS) view, prompt builders
 src/lib/tailor/      skills dictionary and job-matching engine
 src/lib/portability/ PDF/text parser, JSON Resume, backups
 src/lib/ai/          AI providers, prompts, fact guard
-src/components/      UI (editor, preview, check, tailor, data, ai)
+src/components/      UI (editor, preview, design, check, tailor, data, ai)
 ```
 
 ## Privacy

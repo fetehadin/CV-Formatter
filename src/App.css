@@ -1,15 +1,10 @@
-/* --- A4 SHEET --- */
-.cv-page {
-  width: 210mm;
-  min-height: 297mm;
-  padding: 12mm 14mm;
-  box-sizing: border-box;
-}
-
 /* --- NATIVE BROWSER PDF ENGINE ---
  * The app UI is hidden and only the print copy (#print-root) is shown.
- * Margin 0 stops the browser adding its URL/date header and footer;
- * `box-decoration-break: clone` repeats the sheet padding on every page.
+ * The `@page` rule (paper size, margin 0) is rendered next to the print copy,
+ * because it depends on the CV's paper setting. Margin 0 stops the browser
+ * adding its URL/date header and footer; `box-decoration-break: clone`
+ * repeats the sheet padding on every page. Sheet size and padding are inline
+ * styles on `.cv-page`.
  */
 @media screen {
   #print-root {
@@ -18,11 +13,6 @@
 }
 
 @media print {
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
-
   html,
   body {
     background: white !important;
@@ -36,8 +26,7 @@
   }
 
   #print-root .cv-page {
-    width: 210mm;
-    min-height: 0;
+    min-height: 0 !important;
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
   }

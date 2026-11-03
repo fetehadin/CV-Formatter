@@ -188,7 +188,7 @@ export function Editor() {
 
   // A panel asked to show a section: open it, and scroll to it unless an entry will scroll itself.
   useEffect(() => {
-    if (!request) return
+    if (!request || request.section === "design") return
     const key = request.section === "basics" ? "personal" : request.section
     setOpenSections((prev) => (prev.includes(key) ? prev : [...prev, key]))
     if (!request.itemId) {

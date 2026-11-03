@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { DesignSchema } from "./design"
 
 /**
  * The single source of truth for what a CV looks like.
@@ -97,6 +98,11 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   languages: "Languages",
 }
 
+/** The title printed for a section: the user's own, or the standard one. */
+export function sectionTitle(r: Pick<Resume, "design">, key: SectionKey): string {
+  return r.design.headings[key]?.trim() || SECTION_LABELS[key]
+}
+
 /** Keeps known keys once each, in the given order, then appends any missing ones. */
 export function normalizeSectionOrder(order: unknown): SectionKey[] {
   const known = new Set<string>(SECTION_KEYS)
@@ -137,6 +143,7 @@ export const ResumeSchema = z.object({
   certifications: items(CertificationSchema),
   languages: items(LanguageSchema),
   sectionOrder: z.array(z.string()).catch(() => []).transform(normalizeSectionOrder),
+  design: DesignSchema,
 })
 
 export type YearMonth = z.infer<typeof YearMonthSchema>

@@ -1,7 +1,7 @@
 import { cleanBullets, formatRange, isEndBeforeStart, splitList, toMonthNumber } from "@/lib/resume/format"
-import type { Resume, SectionKey, YearMonth } from "@/lib/resume/schema"
+import { SECTION_KEYS, SECTION_LABELS, type Resume, type SectionKey, type YearMonth } from "@/lib/resume/schema"
 import { resumeToPlainText } from "./plaintext"
-import { BUZZWORDS, FIRST_PERSON, isActionVerb, WEAK_OPENERS } from "./words"
+import { BUZZWORDS, FIRST_PERSON, isActionVerb, isStandardHeading, WEAK_OPENERS } from "./words"
 
 /**
  * Rule-based CV checker. Deterministic and offline: the same CV always gets
@@ -9,7 +9,8 @@ import { BUZZWORDS, FIRST_PERSON, isActionVerb, WEAK_OPENERS } from "./words"
  */
 
 export type Severity = "error" | "warning" | "tip"
-export type IssueTarget = { section: SectionKey | "basics"; itemId?: string }
+/** Where "Fix" takes the user: a part of the editor, or the design panel. */
+export type IssueTarget = { section: SectionKey | "basics" | "design"; itemId?: string }
 
 export type Issue = IssueTarget & {
   /** Stable rule id, e.g. "bullet.weak-opener". */
@@ -188,6 +189,18 @@ export function analyzeResume(r: Resume, opts: { pages?: number | null } = {}): 
   if (pages !== null && pages > 2) out.push({ rule: "length.pages", severity: "warning", section: "experience", title: `CV is ${pages} pages`, detail: "Aim for 1 page (under ~5 years' experience) or 2 at most." })
   if (pages !== null && pages === 2 && jobs.length <= 2) out.push({ rule: "length.junior", severity: "tip", section: "experience", title: "Two pages for an early career", detail: "With 1–2 roles, one page usually reads stronger. Cut the weakest points." })
 
+  // --- Design ---
+  const d = r.design
+  if (d.fontSize < 9.5) {
+    out.push({ rule: "design.small-text", severity: "tip", section: "design", title: `Text is ${d.fontSize} pt`, detail: "10–11 pt is easiest to read on screen and paper. Cut weak points rather than shrinking the text." })
+  }
+  for (const key of SECTION_KEYS) {
+    const custom = d.headings[key]?.trim()
+    if (custom && !isStandardHeading(key, custom)) {
+      out.push({ rule: "design.heading", severity: "tip", section: "design", quote: custom, title: `"${custom}" isn't a standard section title`, detail: `ATS look for familiar titles to sort your CV. "${SECTION_LABELS[key]}" is the safest choice.` })
+    }
+  }
+
   // --- Score ---
   const perRule = new Map<string, number>()
   for (const issue of out) perRule.set(issue.rule, Math.min(RULE_CAP, (perRule.get(issue.rule) ?? 0) + PENALTY[issue.severity]))
@@ -217,7 +230,7 @@ export function analyzeResume(r: Resume, opts: { pages?: number | null } = {}): 
 
 /** A one-line label for an entry, used by the check panel ("Frontend Engineer · Chapa"). */
 export function describeTarget(r: Resume, t: IssueTarget): string {
-  if (!t.itemId) return t.section === "basics" ? "Personal details" : ""
+  if (!t.itemId) return t.section === "basics" ? "Personal details" : t.section === "design" ? "Design" : ""
   const x = r.experience.find((i) => i.id === t.itemId)
   if (x) return [x.role, x.company].filter(Boolean).join(" · ") || formatRange(x.start, x.end, x.current)
   const e = r.education.find((i) => i.id === t.itemId)

@@ -1,0 +1,223 @@
+/*
+ * The printable CV. Plain CSS (not utility classes) so the templates are easy
+ * to read side by side. Everything scales from four variables set inline
+ * by ResumeContent:
+ *   --cv-font    font stack
+ *   --cv-fs      body size (pt)
+ *   --cv-space   vertical rhythm multiplier
+ *   --cv-accent  name, headings and links
+ */
+
+.cv-page {
+  box-sizing: border-box;
+}
+
+.cv {
+  font-family: var(--cv-font);
+  font-size: var(--cv-fs);
+  line-height: 1.35;
+  color: #111827;
+}
+
+/* --- Shared building blocks --- */
+
+.cv-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: calc(4mm * var(--cv-space));
+}
+.cv-name {
+  font-size: calc(var(--cv-fs) * 2);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: var(--cv-accent);
+}
+.cv-headline {
+  margin-top: 0.5mm;
+  font-size: calc(var(--cv-fs) * 1.1);
+}
+.cv-contact {
+  margin-top: 1mm;
+}
+.cv-sep {
+  color: #4b5563;
+}
+.cv-link {
+  color: var(--cv-accent);
+  text-decoration: none;
+}
+
+.cv-section {
+  margin-bottom: calc(3.5mm * var(--cv-space));
+}
+.cv-heading {
+  margin-bottom: calc(1.5mm * var(--cv-space));
+  padding-bottom: 0.5mm;
+  border-bottom: 1px solid #9ca3af;
+  font-size: calc(var(--cv-fs) * 1.1);
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: var(--cv-accent);
+  break-after: avoid;
+}
+.cv-entries {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2.5mm * var(--cv-space));
+}
+.cv-entry-head,
+.cv-keep {
+  break-inside: avoid;
+}
+.cv-entry-head {
+  break-after: avoid;
+}
+.cv-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4mm;
+}
+.cv-title {
+  font-weight: 700;
+}
+.cv-normal {
+  font-weight: 400;
+}
+.cv-date,
+.cv-aside {
+  flex-shrink: 0;
+}
+.cv-date {
+  font-style: italic;
+  white-space: nowrap;
+}
+.cv-sub {
+  font-style: italic;
+}
+.cv-summary {
+  text-align: justify;
+  white-space: pre-line;
+}
+.cv-bullets {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.4mm * var(--cv-space));
+  margin-top: calc(0.8mm * var(--cv-space));
+}
+.cv-bullet {
+  display: flex;
+  break-inside: avoid;
+}
+.cv-dot {
+  width: 4.5mm;
+  flex-shrink: 0;
+  padding-left: 1mm;
+}
+.cv-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.6mm * var(--cv-space));
+}
+
+/* --- Modern: left-aligned, strong accent rule, upright dates --- */
+
+.cv[data-template="modern"] .cv-header {
+  align-items: flex-start;
+  text-align: left;
+}
+.cv[data-template="modern"] .cv-name {
+  text-transform: none;
+  letter-spacing: -0.01em;
+  font-size: calc(var(--cv-fs) * 2.3);
+  color: #111827;
+}
+.cv[data-template="modern"] .cv-headline {
+  font-weight: 600;
+  color: var(--cv-accent);
+}
+.cv[data-template="modern"] .cv-heading {
+  border-bottom: 0.6mm solid var(--cv-accent);
+  font-size: var(--cv-fs);
+  letter-spacing: 0.08em;
+}
+.cv[data-template="modern"] .cv-date,
+.cv[data-template="modern"] .cv-sub {
+  font-style: normal;
+  color: #374151;
+}
+.cv[data-template="modern"] .cv-summary {
+  text-align: left;
+}
+
+/* --- Compact: everything on fewer lines, tinted headings --- */
+
+.cv[data-template="compact"] .cv-header {
+  align-items: flex-start;
+  text-align: left;
+  margin-bottom: calc(3mm * var(--cv-space));
+}
+.cv[data-template="compact"] .cv-name {
+  font-size: calc(var(--cv-fs) * 1.7);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.cv[data-template="compact"] .cv-headline {
+  font-size: var(--cv-fs);
+  font-weight: 600;
+}
+.cv[data-template="compact"] .cv-heading {
+  padding: 0.4mm 1.5mm;
+  border-bottom: 0;
+  background: color-mix(in srgb, var(--cv-accent) 10%, white);
+  font-size: var(--cv-fs);
+  letter-spacing: 0.06em;
+}
+.cv[data-template="compact"] .cv-section {
+  margin-bottom: calc(2.8mm * var(--cv-space));
+}
+.cv[data-template="compact"] .cv-entries {
+  gap: calc(1.8mm * var(--cv-space));
+}
+.cv[data-template="compact"] .cv-sub {
+  font-style: normal;
+}
+.cv[data-template="compact"] .cv-aside {
+  color: #4b5563;
+}
+.cv[data-template="compact"] .cv-summary {
+  text-align: left;
+}
+
+/* --- Elegant: spaced capitals, centred headings between hairlines --- */
+
+.cv[data-template="elegant"] .cv-name {
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  font-size: calc(var(--cv-fs) * 2.2);
+}
+.cv[data-template="elegant"] .cv-headline {
+  letter-spacing: 0.06em;
+  font-style: italic;
+}
+.cv[data-template="elegant"] .cv-heading {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  padding-bottom: 0;
+  border-bottom: 0;
+  font-size: var(--cv-fs);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+}
+.cv[data-template="elegant"] .cv-heading::before,
+.cv[data-template="elegant"] .cv-heading::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid #9ca3af;
+}

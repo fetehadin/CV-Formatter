@@ -10,14 +10,16 @@ import { DocumentSwitcher } from "@/components/documents/DocumentSwitcher"
 import { Editor } from "@/components/editor/Editor"
 import { usePageCount } from "@/components/preview/PageMeter"
 import { PreviewPane } from "@/components/preview/PreviewPane"
-import { ResumePage } from "@/components/resume/ResumeDocument"
+import { PrintPageStyle, ResumePage } from "@/components/resume/ResumeDocument"
 import { TailorPanel } from "@/components/tailor/TailorPanel"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useLocalState } from "@/hooks/use-local-state"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { analyzeResume, type IssueTarget } from "@/lib/analysis/analyze"
+import { PAPERS } from "@/lib/resume/design"
 import { exampleResume } from "@/lib/resume/example"
 import { newDocument } from "@/lib/resume/workspace"
 import { cn } from "@/lib/utils"
@@ -70,6 +72,8 @@ export default function App() {
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const [mobileView, setMobileView] = useState<View>("edit")
   const [sideView, setSideView] = useState<Exclude<View, "edit">>("preview")
+  const [ui, setUi] = useLocalState("cvFormatter.ui", { designOpen: false })
+  const setDesignOpen = useCallback((designOpen: boolean) => setUi((u) => ({ ...u, designOpen })), [setUi])
 
   const { pages, meter } = usePageCount(resume)
   // The check runs on a deferred copy, so typing never waits for it.
@@ -87,10 +91,19 @@ export default function App() {
   }
 
   const [navRequest, setNavRequest] = useState<NavRequest | null>(null)
-  const goTo = useCallback((target: IssueTarget) => {
-    setMobileView("edit")
-    setNavRequest((prev) => ({ ...target, seq: (prev?.seq ?? 0) + 1 }))
-  }, [])
+  const goTo = useCallback(
+    (target: IssueTarget) => {
+      if (target.section === "design") {
+        setSideView("preview")
+        setMobileView("preview")
+        setDesignOpen(true)
+        return
+      }
+      setMobileView("edit")
+      setNavRequest((prev) => ({ ...target, seq: (prev?.seq ?? 0) + 1 }))
+    },
+    [setDesignOpen],
+  )
   const nav = useMemo(() => ({ request: navRequest, goTo }), [navRequest, goTo])
 
   const editor = (
@@ -121,7 +134,7 @@ export default function App() {
     </div>
   )
   const side = (view: View) =>
-    view === "check" ? <CheckPanel report={report} /> : view === "tailor" ? <TailorPanel /> : <PreviewPane pages={pages} />
+    view === "check" ? <CheckPanel report={report} /> : view === "tailor" ? <TailorPanel /> : <PreviewPane pages={pages} designOpen={ui.designOpen} onDesignOpenChange={setDesignOpen} />
 
   return (
     <EditorNavProvider value={nav}>
@@ -166,7 +179,7 @@ export default function App() {
                   <div className="flex shrink-0 items-center justify-between border-b px-4 py-2">
                     <ViewTabs value={sideView} onChange={(v) => setSideView(v as Exclude<View, "edit">)} views={["preview", "check", "tailor"]} score={report.score} />
                     <span className="text-xs text-muted-foreground tabular-nums">
-                      {pages} page{pages > 1 ? "s" : ""} · A4
+                      {pages} page{pages > 1 ? "s" : ""} · {PAPERS[resume.design.paper].label}
                     </span>
                   </div>
                   <div className="min-h-0 flex-1">{side(sideView)}</div>
@@ -192,6 +205,7 @@ export default function App() {
 
       {/* Only visible when printing. */}
       <div id="print-root" aria-hidden>
+        <PrintPageStyle resume={resume} />
         <ResumePage resume={resume} />
       </div>
     </EditorNavProvider>
