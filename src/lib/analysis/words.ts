@@ -23,7 +23,11 @@ export const ACTION_VERBS = new Set(
   refined reorganized replaced reported represented researched resolved restructured revamped reviewed revised saved
   scaled scheduled screened secured selected served shaped shipped simplified sold solved spearheaded standardized
   steered streamlined strengthened structured supervised supported surpassed synthesized taught tested tracked trained
-  transformed translated tripled troubleshot unified upgraded validated visualized volunteered won wrote`
+  transformed translated tripled troubleshot unified upgraded validated visualized volunteered won wrote
+  accomplished annotated answered applied attained cleaned coded communicated compared contracted crafted demonstrated
+  devoted encoded enforced ensured explained extended focused fulfilled gathered illustrated labeled labelled leveraged
+  mastered moderated navigated owned posted practiced practised prepared processed reached
+  remodeled restored retained specialized specialised studied submitted summarized surveyed sustained utilized`
     .split(/\s+/)
     .filter(Boolean),
 )
