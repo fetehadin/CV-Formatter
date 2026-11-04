@@ -58,6 +58,38 @@ export type DateStyle = (typeof DATE_STYLES)[number]
 
 export const FONT_SIZE = { min: 9, max: 12, step: 0.5 } as const
 
+/**
+ * Career stage. It sets a sensible section order, and how much each section
+ * counts in the CV score: for a student, education and projects carry the
+ * weight that work experience carries for an experienced hire.
+ */
+export const PROFILES = ["experienced", "early", "changer"] as const
+export type Profile = (typeof PROFILES)[number]
+
+type Section = "summary" | "experience" | "education" | "projects" | "skills" | "certifications" | "languages"
+
+export const PROFILE_INFO: Record<Profile, { label: string; description: string; order: Section[]; weights: Record<Section, number> }> = {
+  experienced: {
+    label: "Experienced",
+    description: "Work history leads. Experience carries the most weight.",
+    order: ["summary", "experience", "skills", "projects", "education", "certifications", "languages"],
+    weights: { experience: 40, skills: 15, summary: 10, education: 10, projects: 10, certifications: 5, languages: 5 },
+  },
+  early: {
+    label: "Student / graduate",
+    description: "Education and projects lead. Internships count as experience.",
+    order: ["summary", "education", "projects", "experience", "skills", "certifications", "languages"],
+    weights: { education: 25, projects: 25, experience: 15, skills: 15, summary: 10, certifications: 5, languages: 5 },
+  },
+  changer: {
+    label: "Career change",
+    description: "Transferable skills and projects up front.",
+    order: ["summary", "skills", "projects", "experience", "education", "certifications", "languages"],
+    weights: { experience: 25, skills: 20, projects: 20, summary: 15, education: 10, certifications: 10, languages: 5 },
+  },
+}
+const SECTIONS = Object.keys(PROFILE_INFO.experienced.weights) as Section[]
+
 const DEFAULTS = {
   template: "classic",
   font: "arial",
@@ -67,6 +99,7 @@ const DEFAULTS = {
   paper: "a4",
   accent: "#1E3A8A",
   dateStyle: "short",
+  profile: "experienced",
 } as const
 
 const keys = <T extends object>(o: T) => Object.keys(o) as [keyof T & string, ...(keyof T & string)[]]
@@ -87,6 +120,12 @@ export const DesignSchema = z
       .regex(/^#[0-9a-f]{6}$/i)
       .catch(DEFAULTS.accent),
     dateStyle: z.enum(DATE_STYLES).catch(DEFAULTS.dateStyle),
+    profile: z.enum(PROFILES).catch(DEFAULTS.profile),
+    /** Sections left out of this CV. Their content is kept, just not printed or scored. */
+    hidden: z
+      .array(z.string())
+      .catch(() => [])
+      .transform((keys) => [...new Set(keys)].filter((k): k is Section => (SECTIONS as string[]).includes(k))),
     /** Custom section titles, keyed by section. Empty or missing = the standard title. */
     headings: z.record(z.string(), z.string().catch("")).catch(() => ({})),
   })
@@ -95,7 +134,7 @@ export const DesignSchema = z
 export type Design = z.infer<typeof DesignSchema>
 
 export function defaultDesign(): Design {
-  return { ...DEFAULTS, headings: {} }
+  return { ...DEFAULTS, headings: {}, hidden: [] }
 }
 
 // --- Page geometry (shared by the preview, the page counter and print) ---

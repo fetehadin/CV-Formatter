@@ -107,5 +107,7 @@ export function exampleResume(): Resume {
       { name: "Tools & Technologies", items: "Git, Docker, Linux, PostgreSQL, System Architecture" },
     ],
     sectionOrder: ["summary", "education", "experience", "projects", "skills", "certifications", "languages"],
+    // A student with internships and projects; no certifications or languages listed yet.
+    design: { profile: "early", hidden: ["certifications", "languages"] },
   })
 }

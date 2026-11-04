@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react"
-import { AlertCircle, AlertTriangle, ArrowRight, Check, Copy, Lightbulb } from "lucide-react"
+import { AlertCircle, AlertTriangle, ArrowRight, Check, Circle, Copy, Lightbulb } from "lucide-react"
 import { toast } from "sonner"
 import { ReviewPromptDialog } from "@/components/prompt/ReviewPromptDialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { describeTarget, type Issue, type Report, type Severity } from "@/lib/analysis/analyze"
+import { describeTarget, type Issue, type IssueTarget, type Report, type Severity } from "@/lib/analysis/analyze"
+import { BAND_LABELS, CONTACT_POINTS, FORMAT_POINTS, MUST_FIX_CAP, SECTION_POINTS, type Band, type ScorePart } from "@/lib/analysis/score"
+import { PROFILE_INFO } from "@/lib/resume/design"
 import { resumeToPlainText } from "@/lib/analysis/plaintext"
 import { copyText } from "@/lib/clipboard"
 import { cn } from "@/lib/utils"
@@ -17,33 +19,92 @@ const GROUPS: { severity: Severity; label: string; icon: typeof AlertCircle; ton
   { severity: "tip", label: "Tips", icon: Lightbulb, tone: "text-sky-600" },
 ]
 
-function scoreTone(score: number) {
-  if (score >= 85) return { text: "text-emerald-600", bar: "bg-emerald-500", label: "Strong" }
-  if (score >= 65) return { text: "text-amber-600", bar: "bg-amber-500", label: "Getting there" }
-  return { text: "text-destructive", bar: "bg-destructive", label: "Needs work" }
+const BAND_TONE: Record<Band, { text: string; bar: string }> = {
+  strong: { text: "text-emerald-600", bar: "bg-emerald-500" },
+  good: { text: "text-sky-600", bar: "bg-sky-500" },
+  fair: { text: "text-amber-600", bar: "bg-amber-500" },
+  weak: { text: "text-destructive", bar: "bg-destructive" },
+}
+
+/** Where "Fix" goes for each part of the score. */
+function partTarget(id: ScorePart["id"]): IssueTarget {
+  return id === "contact" ? { section: "basics" } : id === "format" ? { section: "design" } : { section: id }
+}
+
+function Breakdown({ parts }: { parts: ScorePart[] }) {
+  const { goTo } = useEditorNav()
+  return (
+    <ul className="flex flex-col divide-y rounded-lg border" aria-label="Score by section">
+      {parts.map((p) => {
+        const ratio = p.max ? p.earned / p.max : 0
+        const bar = ratio >= 0.85 ? "bg-emerald-500" : ratio >= 0.6 ? "bg-sky-500" : ratio >= 0.35 ? "bg-amber-500" : "bg-destructive"
+        return (
+          <li key={p.id}>
+            <button type="button" onClick={() => goTo(partTarget(p.id))} className="flex w-full flex-col gap-1.5 px-3 py-2.5 text-left transition-colors hover:bg-muted/60">
+              <span className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="font-medium">{p.label}</span>
+                <span className="text-muted-foreground tabular-nums">
+                  <span className="font-medium text-foreground">{p.earned}</span> / {p.max}
+                </span>
+              </span>
+              <span className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+                <span className={cn("block h-full rounded-full", bar)} style={{ width: `${ratio * 100}%` }} />
+              </span>
+              {p.hint && <span className="text-xs text-muted-foreground">{p.hint}</span>}
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
 }
 
 function ScoreCard({ report }: { report: Report }) {
-  const tone = scoreTone(report.score)
-  const { stats, counts } = report
+  const { resume } = useWorkspace()
+  const { score, stats, counts } = report
+  const profile = PROFILE_INFO[resume.design.profile].label
   return (
     <Card>
       <CardContent className="flex flex-col gap-4">
-        <div className="flex items-end justify-between gap-4">
+        {score.status === "unscored" ? (
           <div>
             <p className="text-sm text-muted-foreground">CV check</p>
             <p className="flex items-baseline gap-2">
-              <span className={cn("text-4xl font-semibold tabular-nums", tone.text)}>{report.score}</span>
-              <span className="text-sm text-muted-foreground">/ 100 · {tone.label}</span>
+              <span className="text-4xl font-semibold text-muted-foreground">–</span>
+              <span className="text-sm text-muted-foreground">Not enough to score yet</span>
             </p>
+            <ul className="mt-3 flex flex-col gap-1.5 text-sm">
+              {score.needed.map((n) => (
+                <li key={n} className="flex items-center gap-2">
+                  <Circle className="size-3.5 text-muted-foreground" aria-hidden /> {n}
+                </li>
+              ))}
+            </ul>
           </div>
-          <p className="text-right text-xs text-muted-foreground">
-            {counts.error} must fix · {counts.warning} should fix · {counts.tip} tips
-          </p>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-muted" role="meter" aria-label="CV score" aria-valuenow={report.score} aria-valuemin={0} aria-valuemax={100}>
-          <div className={cn("h-full rounded-full transition-all", tone.bar)} style={{ width: `${report.score}%` }} />
-        </div>
+        ) : (
+          <>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">CV check</p>
+                <p className="flex items-baseline gap-2">
+                  <span className={cn("text-4xl font-semibold tabular-nums", BAND_TONE[score.band].text)}>{score.score}</span>
+                  <span className="text-sm text-muted-foreground">/ 100 · {BAND_LABELS[score.band]}</span>
+                </p>
+              </div>
+              <p className="text-right text-xs text-muted-foreground">
+                {counts.error} must fix · {counts.warning} should fix · {counts.tip} tips
+              </p>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted" role="meter" aria-label="CV score" aria-valuenow={score.score} aria-valuemin={0} aria-valuemax={100}>
+              <div className={cn("h-full rounded-full transition-all", BAND_TONE[score.band].bar)} style={{ width: `${score.score}%` }} />
+            </div>
+            {score.capped && <p className="text-xs text-destructive">Held at {MUST_FIX_CAP} until the "Must fix" items below are done.</p>}
+          </>
+        )}
+
+        {/* No breakdown before there's a CV: "15/15 formatting" on an empty page would mislead. */}
+        {score.status === "scored" && <Breakdown parts={score.parts} />}
+
         <dl className="grid grid-cols-3 gap-2 text-center">
           {[
             ["Pages", stats.pages ?? "–"],
@@ -57,7 +118,7 @@ function ScoreCard({ report }: { report: Report }) {
           ))}
         </dl>
         <p className="text-xs text-muted-foreground">
-          Based on common recruiter and ATS guidance. It checks structure and wording, not whether you fit a job. For that, use Tailor.
+          Points are earned: contact {CONTACT_POINTS}, your sections {SECTION_POINTS} (shared by the sections on this CV, weighted for {profile.toLowerCase()}), formatting and length {FORMAT_POINTS}. Change sections and career stage in Design. It checks structure and wording, not whether you fit a job. For that, use Tailor.
         </p>
       </CardContent>
     </Card>

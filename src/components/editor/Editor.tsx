@@ -1,13 +1,13 @@
 import { useEffect, useId, useState, type ReactNode } from "react"
-import { ArrowDown, ArrowUp } from "lucide-react"
+import { ArrowDown, ArrowUp, EyeOff } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
-import { moveSection } from "@/lib/resume/edit"
+import { moveSection, setSectionHidden } from "@/lib/resume/edit"
 import { formatRange } from "@/lib/resume/format"
-import { SECTION_LABELS, type Basics, type Resume, type SectionKey } from "@/lib/resume/schema"
+import { SECTION_LABELS, visibleSections, type Basics, type Resume, type SectionKey } from "@/lib/resume/schema"
 import { DraftSummary } from "@/components/ai/AiAssist"
 import { useEditorNav } from "@/state/editor-nav"
 import { useWorkspace } from "@/state/workspace"
@@ -182,8 +182,9 @@ function count(r: Resume, key: SectionKey): number {
 
 export function Editor() {
   const { resume, updateResume } = useWorkspace()
-  const order = resume.sectionOrder
-  const { request } = useEditorNav()
+  const order = visibleSections(resume)
+  const hidden = resume.sectionOrder.filter((k) => resume.design.hidden.includes(k))
+  const { request, goTo } = useEditorNav()
   const [openSections, setOpenSections] = useState<string[]>(["personal"])
 
   // A panel asked to show a section: open it, and scroll to it unless an entry will scroll itself.
@@ -228,6 +229,15 @@ export function Editor() {
               <Button variant="ghost" size="icon-sm" aria-label={`Move ${SECTION_LABELS[key]} section down`} disabled={index === order.length - 1} onClick={() => updateResume((r) => moveSection(r, key, 1))}>
                 <ArrowDown />
               </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Remove ${SECTION_LABELS[key]} from this CV`}
+                title="Remove from this CV (your text is kept)"
+                onClick={() => updateResume((r) => setSectionHidden(r, key, true))}
+              >
+                <EyeOff />
+              </Button>
             </div>
             <AccordionContent className="pb-5">
               <SectionFields section={key} />
@@ -235,6 +245,14 @@ export function Editor() {
           </AccordionItem>
         )
       })}
+      {hidden.length > 0 && (
+        <p className="px-1 text-xs text-muted-foreground">
+          Not on this CV: {hidden.map((k) => SECTION_LABELS[k]).join(", ")}.{" "}
+          <button type="button" className="underline underline-offset-2 hover:text-foreground" onClick={() => goTo({ section: "design" })}>
+            Add sections in Design
+          </button>
+        </p>
+      )}
     </Accordion>
   )
 }

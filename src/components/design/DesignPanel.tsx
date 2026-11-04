@@ -1,13 +1,15 @@
 import { useId, type ReactNode } from "react"
-import { Check, Minimize2, RotateCcw } from "lucide-react"
+import { ArrowDown, ArrowUp, Check, Minimize2, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 import { TextField } from "@/components/editor/fields"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select"
-import { ACCENTS, defaultDesign, FONT_SIZE, FONTS, PAPERS, TEMPLATE_INFO, TEMPLATES, type DateStyle, type Design, type FontId, type Margins, type Paper, type Spacing } from "@/lib/resume/design"
+import { ACCENTS, defaultDesign, PROFILE_INFO, PROFILES, type Profile, FONT_SIZE, FONTS, PAPERS, TEMPLATE_INFO, TEMPLATES, type DateStyle, type Design, type FontId, type Margins, type Paper, type Spacing } from "@/lib/resume/design"
+import { moveSection, setSectionHidden } from "@/lib/resume/edit"
 import { formatYearMonth } from "@/lib/resume/format"
-import { SECTION_LABELS, type SectionKey } from "@/lib/resume/schema"
+import { SECTION_LABELS, visibleSections, type SectionKey } from "@/lib/resume/schema"
 import { cn } from "@/lib/utils"
 import { useWorkspace } from "@/state/workspace"
 import { fitToOnePage } from "./fit"
@@ -51,6 +53,61 @@ function Segmented<T extends string>({ label, value, options, onChange }: { labe
 const SAMPLE_DATE = { month: "Sep", year: "2022" }
 const FONT_SIZES = Array.from({ length: (FONT_SIZE.max - FONT_SIZE.min) / FONT_SIZE.step + 1 }, (_, i) => FONT_SIZE.min + i * FONT_SIZE.step)
 const FONT_GROUPS = ["Sans-serif", "Serif"] as const
+
+/**
+ * Which sections this CV has, in what order, and the career stage that
+ * decides how much each one counts in the score.
+ */
+function SectionsPicker() {
+  const { resume, updateResume } = useWorkspace()
+  const d = resume.design
+  const visible = visibleSections(resume)
+
+  const chooseProfile = (profile: Profile) => {
+    if (profile === d.profile) return
+    const previous = { order: resume.sectionOrder, profile: d.profile }
+    updateResume((r) => ({ ...r, sectionOrder: [...PROFILE_INFO[profile].order], design: { ...r.design, profile } }))
+    toast.success(`Set up for ${PROFILE_INFO[profile].label.toLowerCase()}`, {
+      description: "Sections reordered and the score reweighted.",
+      action: { label: "Undo", onClick: () => updateResume((r) => ({ ...r, sectionOrder: previous.order, design: { ...r.design, profile: previous.profile } })) },
+    })
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Segmented<Profile>
+        label="Career stage (sets section order and score weights)"
+        value={d.profile}
+        onChange={chooseProfile}
+        options={PROFILES.map((p) => ({ value: p, label: PROFILE_INFO[p].label }))}
+      />
+      <p className="-mt-1 text-xs text-muted-foreground">{PROFILE_INFO[d.profile].description}</p>
+      <ul className="flex flex-col divide-y rounded-lg border" aria-label="Sections on this CV">
+        {resume.sectionOrder.map((key) => {
+          const shown = !d.hidden.includes(key)
+          const i = visible.indexOf(key)
+          const id = `section-toggle-${key}`
+          return (
+            <li key={key} className={cn("flex items-center gap-2 px-3 py-1.5", !shown && "bg-muted/40")}>
+              <Switch id={id} size="sm" checked={shown} onCheckedChange={(on) => updateResume((r) => setSectionHidden(r, key, !on))} />
+              <label htmlFor={id} className={cn("min-w-0 flex-1 truncate text-sm", !shown && "text-muted-foreground line-through")}>
+                {SECTION_LABELS[key]}
+              </label>
+              {!shown && <span className="text-[11px] text-muted-foreground">Not on CV</span>}
+              <Button variant="ghost" size="icon-xs" aria-label={`Move ${SECTION_LABELS[key]} up`} disabled={!shown || i === 0} onClick={() => updateResume((r) => moveSection(r, key, -1))}>
+                <ArrowUp />
+              </Button>
+              <Button variant="ghost" size="icon-xs" aria-label={`Move ${SECTION_LABELS[key]} down`} disabled={!shown || i === visible.length - 1} onClick={() => updateResume((r) => moveSection(r, key, 1))}>
+                <ArrowDown />
+              </Button>
+            </li>
+          )
+        })}
+      </ul>
+      <p className="text-xs text-muted-foreground">Turn off sections you don't need. Their text is kept, but they leave the PDF and the score, and their points go to the rest.</p>
+    </div>
+  )
+}
 
 /** Template, type, spacing, paper and colour for the active CV. Changes show in the preview right away. */
 export function DesignPanel() {
@@ -106,6 +163,8 @@ export function DesignPanel() {
           ))}
         </div>
       </div>
+
+      <SectionsPicker />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Font" htmlFor={fontId}>
@@ -200,7 +259,7 @@ export function DesignPanel() {
         <summary className="cursor-pointer text-sm font-medium select-none">Section titles</summary>
         <p className="mt-1 text-xs text-muted-foreground">Rename a section if your field expects it, e.g. "Experience" or "Profile". Standard titles are safest for ATS; Check warns about unusual ones.</p>
         <div className="mt-3 grid gap-3 pb-1 sm:grid-cols-2">
-          {resume.sectionOrder.map((key: SectionKey) => (
+          {visibleSections(resume).map((key: SectionKey) => (
             <TextField
               key={key}
               label={SECTION_LABELS[key]}
@@ -221,13 +280,13 @@ export function DesignPanel() {
           variant="outline"
           onClick={() => {
             const design = d
-            updateWorkspace((ws) => ({ ...ws, documents: ws.documents.map((doc) => ({ ...doc, resume: { ...doc.resume, design: structuredClone(design) } })) }))
-            toast.success("Design used on all your CVs")
+            updateWorkspace((ws) => ({ ...ws, documents: ws.documents.map((doc) => ({ ...doc, resume: { ...doc.resume, design: { ...structuredClone(design), profile: doc.resume.design.profile, hidden: doc.resume.design.hidden, headings: doc.resume.design.headings } } })) }))
+            toast.success("Look used on all your CVs", { description: "Each CV keeps its own sections." })
           }}
         >
           Use on all CVs
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => replace(defaultDesign(), "Design reset")}>
+        <Button size="sm" variant="ghost" onClick={() => replace({ ...defaultDesign(), profile: d.profile, hidden: d.hidden, headings: d.headings }, "Look reset", "Sections and their titles are kept.")}>
           <RotateCcw /> Reset
         </Button>
       </div>

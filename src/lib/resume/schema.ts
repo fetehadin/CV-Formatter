@@ -103,6 +103,11 @@ export function sectionTitle(r: Pick<Resume, "design">, key: SectionKey): string
   return r.design.headings[key]?.trim() || SECTION_LABELS[key]
 }
 
+/** The sections this CV shows, in order. Hidden ones are left out of the PDF, the ATS text and the score. */
+export function visibleSections(r: Pick<Resume, "sectionOrder" | "design">): SectionKey[] {
+  return r.sectionOrder.filter((k) => !r.design.hidden.includes(k))
+}
+
 /** Keeps known keys once each, in the given order, then appends any missing ones. */
 export function normalizeSectionOrder(order: unknown): SectionKey[] {
   const known = new Set<string>(SECTION_KEYS)
