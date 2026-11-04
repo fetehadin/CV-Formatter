@@ -1,6 +1,7 @@
 import { cleanBullets, formatRange, isEndBeforeStart, splitList, toMonthNumber } from "@/lib/resume/format"
 import { SECTION_KEYS, SECTION_LABELS, type Resume, type SectionKey, type YearMonth } from "@/lib/resume/schema"
 import { resumeToPlainText } from "./plaintext"
+import { scoreResume, type Score } from "./score"
 import { BUZZWORDS, FIRST_PERSON, isActionVerb, isStandardHeading, WEAK_OPENERS } from "./words"
 
 /**
@@ -23,15 +24,13 @@ export type Issue = IssueTarget & {
 }
 
 export type Report = {
-  score: number
+  /** Earned points per contact, section and formatting, or "unscored" until there's enough CV to judge. */
+  score: Score
   issues: Issue[]
   counts: Record<Severity, number>
   stats: { words: number; bullets: number; bulletsWithNumbers: number; pages: number | null }
 }
 
-const PENALTY: Record<Severity, number> = { error: 12, warning: 5, tip: 2 }
-/** One rule can't sink the score on its own. */
-const RULE_CAP = 15
 
 const HAS_METRIC = /\d|\b(doubled|tripled|halved|quadrupled|percent|million|thousand|hundred|dozen)\b/i
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
@@ -122,7 +121,7 @@ export function analyzeResume(r: Resume, opts: { pages?: number | null } = {}): 
   // --- Experience ---
   const jobs = r.experience.filter((x) => x.role || x.company || cleanBullets(x.bullets).length)
   if (jobs.length === 0) {
-    out.push({ rule: "experience.missing", severity: "warning", section: "experience", title: "No work experience yet", detail: "Add internships, freelance or volunteer work. If you have none, put Projects higher." })
+    out.push({ rule: "experience.missing", severity: r.design.profile === "early" ? "tip" : "warning", section: "experience", title: "No work experience yet", detail: "Add internships, freelance or volunteer work. If you have none, put Projects higher." })
   }
   for (const x of jobs) {
     const label = x.role || x.company || "a job"
@@ -186,8 +185,8 @@ export function analyzeResume(r: Resume, opts: { pages?: number | null } = {}): 
   }
 
   const pages = opts.pages ?? null
-  if (pages !== null && pages > 2) out.push({ rule: "length.pages", severity: "warning", section: "experience", title: `CV is ${pages} pages`, detail: "Aim for 1 page (under ~5 years' experience) or 2 at most." })
-  if (pages !== null && pages === 2 && jobs.length <= 2) out.push({ rule: "length.junior", severity: "tip", section: "experience", title: "Two pages for an early career", detail: "With 1–2 roles, one page usually reads stronger. Cut the weakest points." })
+  if (pages !== null && pages > 2) out.push({ rule: "length.pages", severity: "warning", section: "design", title: `CV is ${pages} pages`, detail: "Aim for 1 page (under ~5 years' experience) or 2 at most. Try Fit to one page in Design." })
+  if (pages !== null && pages === 2 && (jobs.length <= 2 || r.design.profile === "early")) out.push({ rule: "length.junior", severity: "tip", section: "design", title: "Two pages for an early career", detail: "One page usually reads stronger. Cut the weakest points, or try Fit to one page in Design." })
 
   // --- Design ---
   const d = r.design
@@ -201,23 +200,22 @@ export function analyzeResume(r: Resume, opts: { pages?: number | null } = {}): 
     }
   }
 
-  // --- Score ---
-  const perRule = new Map<string, number>()
-  for (const issue of out) perRule.set(issue.rule, Math.min(RULE_CAP, (perRule.get(issue.rule) ?? 0) + PENALTY[issue.severity]))
-  const penalty = [...perRule.values()].reduce((a, b) => a + b, 0)
-  const score = Math.max(0, Math.min(100, 100 - penalty))
+  // Sections left off this CV aren't checked.
+  const hidden = new Set<string>(d.hidden)
+  const SECTION_RULES = /^(summary|experience|education|skills|entry|bullet|date)\./
+  const issues = out.filter((i) => !(hidden.has(i.section) && SECTION_RULES.test(i.rule)))
 
   const allBullets = [...jobs, ...schools, ...r.projects].flatMap((x) => cleanBullets(x.bullets))
   const textForCount = [summary, ...allBullets, ...skills].join(" ")
   const counts = { error: 0, warning: 0, tip: 0 }
-  for (const i of out) counts[i.severity]++
+  for (const i of issues) counts[i.severity]++
 
   const order: Record<Severity, number> = { error: 0, warning: 1, tip: 2 }
-  out.sort((a, b) => order[a.severity] - order[b.severity])
+  issues.sort((a, b) => order[a.severity] - order[b.severity])
 
   return {
-    score,
-    issues: out,
+    score: scoreResume(r, { pages, hasMustFix: counts.error > 0 }),
+    issues,
     counts,
     stats: {
       words: words(textForCount).length,

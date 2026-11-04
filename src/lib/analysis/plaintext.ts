@@ -1,5 +1,5 @@
 import { cleanBullets, displayUrl, formatRange, formatYearMonth, splitList } from "@/lib/resume/format"
-import { sectionTitle, type Resume, type SectionKey, type YearMonth } from "@/lib/resume/schema"
+import { sectionTitle, visibleSections, type Resume, type SectionKey, type YearMonth } from "@/lib/resume/schema"
 
 export type PlainTextOptions = {
   /** Replace email, phone and profile links with placeholders (for pasting into AI tools). */
@@ -76,7 +76,7 @@ export function resumeToPlainText(r: Resume, opts: PlainTextOptions = {}): strin
   if (b.headline.trim()) out.push(b.headline.trim())
   if (contact.length) out.push(contact.join(" | "))
 
-  for (const key of r.sectionOrder) {
+  for (const key of visibleSections(r)) {
     const lines = sectionLines(key, r)
     if (!lines.length) continue
     while (lines.at(-1) === "") lines.pop()

@@ -39,15 +39,19 @@ describe("isActionVerb", () => {
 
 describe("analyzeResume", () => {
   it("gives a strong CV a high score and no errors", () => {
-    const report = analyzeResume(strong(), { pages: 1 })
+    const r = strong()
+    r.skills[0].items = "TypeScript, Python, React, Node.js, SQL, Docker"
+    r.design.hidden = ["projects", "certifications", "languages"]
+    const report = analyzeResume(r, { pages: 1 })
     expect(report.counts.error).toBe(0)
-    expect(report.score).toBeGreaterThanOrEqual(85)
+    expect(report.score.status === "scored" && report.score.score).toBeGreaterThanOrEqual(85)
     expect(report.stats).toMatchObject({ bullets: 3, bulletsWithNumbers: 3, pages: 1 })
   })
 
-  it("flags an empty CV as needing work", () => {
+  it("doesn't score an empty CV, and says what's needed", () => {
     const report = analyzeResume(parseResume({}))
-    expect(report.score).toBeLessThan(65)
+    expect(report.score.status).toBe("unscored")
+    expect(report.score.status === "unscored" && report.score.needed[0]).toBe("Add your name")
     expect(rules(parseResume({}))).toEqual(expect.arrayContaining(["basics.name", "basics.email", "skills.missing", "experience.missing"]))
   })
 
@@ -82,10 +86,13 @@ describe("analyzeResume", () => {
     expect(ranks).toEqual(ranks.toSorted())
   })
 
-  it("caps how much one repeated rule can cost", () => {
+  it("skips checks for sections that aren't on the CV", () => {
     const r = strong()
-    r.experience[0].bullets = Array.from({ length: 12 }, (_, i) => `the thing number ${i} was done somehow`)
-    expect(analyzeResume(r).score).toBeGreaterThan(50)
+    r.education[0].degree = ""
+    expect(rules(r)).toContain("entry.no-degree")
+    r.design.hidden = ["education"]
+    expect(rules(r)).not.toContain("entry.no-degree")
+    expect(rules(r)).not.toContain("education.missing")
   })
 
   it("warns about long CVs", () => {

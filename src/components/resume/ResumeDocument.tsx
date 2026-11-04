@@ -2,7 +2,7 @@ import "./resume.css"
 import { Fragment, type CSSProperties, type ReactNode } from "react"
 import { FONTS, pageGeometry, PAPERS, SPACINGS, type Design } from "@/lib/resume/design"
 import { cleanBullets, displayUrl, formatRange, formatYearMonth, splitList, toHref } from "@/lib/resume/format"
-import { sectionTitle, type Resume, type SectionKey } from "@/lib/resume/schema"
+import { sectionTitle, visibleSections, type Resume, type SectionKey } from "@/lib/resume/schema"
 import { cn } from "@/lib/utils"
 
 /**
@@ -254,7 +254,7 @@ export function ResumeContent({ resume }: { resume: Resume }) {
           </>
         )}
       </header>
-      {resume.sectionOrder.map((key) => (
+      {visibleSections(resume).map((key) => (
         <Fragment key={key}>{renderSection(key, resume)}</Fragment>
       ))}
     </div>

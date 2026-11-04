@@ -20,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLocalState } from "@/hooks/use-local-state"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { analyzeResume, type IssueTarget } from "@/lib/analysis/analyze"
+import type { Score } from "@/lib/analysis/score"
 import { PAPERS } from "@/lib/resume/design"
 import { exampleResume } from "@/lib/resume/example"
 import { newDocument } from "@/lib/resume/workspace"
@@ -39,12 +40,13 @@ function printCv(name: string) {
 
 type View = "edit" | "preview" | "check" | "tailor"
 
-function ScoreBadge({ score }: { score: number }) {
-  const tone = score >= 85 ? "bg-emerald-100 text-emerald-800" : score >= 65 ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800"
-  return <Badge className={cn("tabular-nums", tone)}>{score}</Badge>
+function ScoreBadge({ score }: { score: Score }) {
+  if (score.status === "unscored") return <Badge variant="secondary" aria-label="Not scored yet">–</Badge>
+  const tone = { strong: "bg-emerald-100 text-emerald-800", good: "bg-sky-100 text-sky-800", fair: "bg-amber-100 text-amber-800", weak: "bg-red-100 text-red-800" }[score.band]
+  return <Badge className={cn("tabular-nums", tone)}>{score.score}</Badge>
 }
 
-function ViewTabs({ value, onChange, views, score }: { value: View; onChange: (v: View) => void; views: View[]; score: number }) {
+function ViewTabs({ value, onChange, views, score }: { value: View; onChange: (v: View) => void; views: View[]; score: Score }) {
   const labels: Record<View, ReactNode> = {
     edit: "Edit",
     preview: "Preview",

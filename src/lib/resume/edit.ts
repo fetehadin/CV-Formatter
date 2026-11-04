@@ -56,8 +56,21 @@ export function moveItem<S extends ListSection>(r: Resume, section: S, id: strin
   return next === list ? r : setList(r, section, next)
 }
 
+/** Moves a section past its next *visible* neighbour, so hidden sections never make a click look like it did nothing. */
 export function moveSection(r: Resume, key: SectionKey, delta: -1 | 1): Resume {
-  const from = r.sectionOrder.indexOf(key)
-  const next = move(r.sectionOrder, from, from + delta)
-  return next === r.sectionOrder ? r : { ...r, sectionOrder: next }
+  const order = r.sectionOrder
+  const from = order.indexOf(key)
+  let to = from + delta
+  while (to >= 0 && to < order.length && r.design.hidden.includes(order[to])) to += delta
+  if (from === -1 || to < 0 || to >= order.length) return r
+  const next = [...order]
+  next.splice(from, 1)
+  next.splice(to, 0, key)
+  return { ...r, sectionOrder: next }
+}
+
+/** Shows or hides a section. Its content is kept either way. */
+export function setSectionHidden(r: Resume, key: SectionKey, hidden: boolean): Resume {
+  const rest = r.design.hidden.filter((k) => k !== key)
+  return { ...r, design: { ...r.design, hidden: hidden ? [...rest, key] : rest } }
 }
