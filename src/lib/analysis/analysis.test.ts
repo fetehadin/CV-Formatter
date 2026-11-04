@@ -29,6 +29,9 @@ describe("isActionVerb", () => {
   it("accepts past, present and irregular forms", () => {
     for (const w of ["Built", "build", "builds", "Led", "lead", "Reduced", "reduce", "optimize", "Spearheaded"]) expect(isActionVerb(w), w).toBe(true)
   })
+  it("knows common verbs that real CVs open with", () => {
+    for (const w of ["Ensured", "Posted", "Demonstrated", "Practiced", "Focused", "Mastered", "Applied", "Utilized"]) expect(isActionVerb(w), w).toBe(true)
+  })
   it("rejects non-verbs", () => {
     for (const w of ["The", "Responsible", "Team", ""]) expect(isActionVerb(w), w).toBe(false)
   })

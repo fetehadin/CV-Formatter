@@ -1,68 +1,111 @@
 import { parseResume, type Resume } from "./schema"
 
-/** A realistic sample CV so new visitors can see every feature before typing anything. */
+/**
+ * The maker's own CV, used as the sample so new visitors can see every
+ * feature before typing anything. It's real, so it is never "improved" with
+ * invented facts. Check shows what it would flag, honestly.
+ */
 export function exampleResume(): Resume {
   return parseResume({
     basics: {
-      name: "Hana Bekele",
-      headline: "Frontend Engineer",
-      email: "hana.bekele@example.com",
-      phone: "+251 911 234 567",
+      name: "Fetehadin Negash",
+      headline: "Full-Stack Software Engineer",
+      email: "fetehadinnegash@gmail.com",
+      phone: "+251 986 955 964",
       location: "Addis Ababa, Ethiopia",
-      linkedin: "linkedin.com/in/hanabekele",
-      github: "github.com/hanabekele",
+      linkedin: "linkedin.com/in/fetehadin",
+      github: "github.com/fetehadin",
+      website: "fetehadin.com",
     },
     summary:
-      "Frontend engineer with 3 years building React and TypeScript apps for fintech. Rebuilt a merchant dashboard used by 1,200 businesses and cut its load time by 45%.",
-    experience: [
+      "Full-Stack Software Engineer specializing in building scalable, high-performance web applications. I combine a strong foundation in backend architecture (Python/Django) with proficiency in modern frontend frameworks (JavaScript, Next.js, NodeJS) to deliver robust end-to-end solutions. With a disciplined engineering background, I apply structural logic to design modular, maintainable systems. Passionate about technical leadership, collaborative development, and leveraging diverse technologies to solve complex, real-world problems.",
+    education: [
       {
-        role: "Frontend Engineer",
-        company: "Lalibela Pay",
-        location: "Addis Ababa",
-        start: { month: "Aug", year: "2022" },
+        school: "HiLCoE School of Computer Science & Technology",
+        degree: "B.Sc. in Software Engineering",
+        start: { year: "2025" },
         current: true,
         bullets: [
-          "Rebuilt the merchant dashboard in React and TypeScript, now used by 1,200 businesses",
-          "Cut page load time by 45% with code-splitting and image optimisation",
-          "Responsible for the payments settings page",
-          "Mentored 2 junior developers through weekly code reviews",
+          "Developed core competencies in System Architecture and scalable System Design principles",
+          "Integrated Software Engineering Lifecycles into production-grade software development",
+          "Practiced modular code design and maintainable engineering for complex systems",
+          "Focused on high-performance optimization through advanced algorithmic analysis",
         ],
       },
       {
-        role: "Junior Web Developer",
-        company: "Abay Digital",
-        location: "Remote",
-        start: { month: "Jan", year: "2021" },
-        end: { month: "Jul", year: "2022" },
-        bullets: ["Built 8 marketing websites for local clients", "Worked on the company's booking system"],
+        school: "INSA Cyber Talent Program",
+        degree: "Software development training",
+        start: { month: "Jun", year: "2025" },
+        end: { month: "Oct", year: "2025" },
+      },
+      {
+        school: "Nexus",
+        degree: "Data Structures & Algorithms",
+        start: { month: "Jun", year: "2025" },
+        end: { month: "Sep", year: "2025" },
+        bullets: [
+          "Mastered advanced concepts in space and time complexity, sorting algorithms, two pointers, and sliding window, directly leveraging these algorithmic patterns to optimize logic and solve complex real-world engineering problems with high efficiency",
+        ],
+      },
+      {
+        school: "ALX",
+        degree: "Backend Software Engineering",
+        start: { month: "Aug", year: "2024" },
+        end: { month: "Jan", year: "2025" },
+        bullets: [
+          "Engineered scalable backend services using Python and Django",
+          "Optimized database performance through rigorous schema design and efficient querying",
+          "Applied Agile methodologies to deliver robust, production-ready software solutions",
+        ],
       },
     ],
-    education: [
+    experience: [
       {
-        school: "Addis Ababa University",
-        degree: "B.Sc. Software Engineering",
-        start: { month: "Sep", year: "2016" },
-        end: { month: "Jul", year: "2020" },
-        bullets: ["GPA 3.6/4.0"],
+        role: "Full-Stack Software Engineer",
+        company: "EduConnect",
+        start: { month: "Jul", year: "2025" },
+        current: true,
+        bullets: [
+          "Architected a modular educational ecosystem utilizing Python and Django/DRF, focusing on system scalability and seamless backend integration for campus-wide services",
+          "Designed a scalable, role-based access control (RBAC) system, a centralized resource hub, and an efficient announcement/opportunity board to streamline campus communication",
+          "Implemented a centralized dashboard to track academic discussions and events using Python, Django/DRF, and PostgreSQL",
+        ],
+      },
+      {
+        role: "Data Encoder",
+        company: "Ethiopian AI Institute",
+        start: { month: "Aug", year: "2025" },
+        end: { month: "Dec", year: "2025" },
+        bullets: [
+          "Contributed to critical nationwide AI infrastructure by architecting and cleaning structured datasets",
+          "Ensured high data quality and accuracy to effectively feed machine learning models",
+        ],
+      },
+      {
+        role: "Volunteer Mentor",
+        company: "ALX",
+        start: { month: "Jun", year: "2025" },
+        end: { month: "Jul", year: "2025" },
+        bullets: [
+          'Served as a "Catch Up Squad" member, providing technical guidance and support to frontend learners',
+          "Posted helpful content in forums, answered technical questions in Discord, and created a safe, inclusive environment for peer learning",
+          "Demonstrated leadership through knowledge-sharing and encouragement",
+        ],
       },
     ],
     projects: [
       {
-        name: "Clinic Queue",
-        link: "github.com/hanabekele/clinic-queue",
-        tech: "React, Node.js, PostgreSQL",
-        bullets: ["Offline-first queue app used by 3 clinics to cut waiting-room crowding"],
+        name: "Library Management System",
+        tech: "Git, GitHub",
+        start: { month: "Aug", year: "2024" },
+        end: { month: "Jan", year: "2025" },
+        bullets: ["Designed and implemented CRUD operations with optimized queries", "Collaborated using Git and GitHub, applying Agile workflows"],
       },
     ],
     skills: [
-      { name: "Languages", items: "TypeScript, JavaScript, HTML, CSS, SQL" },
-      { name: "Frameworks", items: "React, Next.js, Node.js, Tailwind CSS" },
-      { name: "Tools", items: "Git, Docker, Jest, Figma" },
+      { name: "Languages & Frameworks", items: "Python, Java, C++, JavaScript, Node.js, Next.js, Django, Django REST Framework, SQL" },
+      { name: "Tools & Technologies", items: "Git, Docker, Linux, PostgreSQL, System Architecture" },
     ],
-    certifications: [{ name: "Meta Front-End Developer", issuer: "Coursera", date: { month: "Mar", year: "2022" } }],
-    languages: [
-      { language: "Amharic", fluency: "Native" },
-      { language: "English", fluency: "Fluent" },
-    ],
+    sectionOrder: ["summary", "education", "experience", "projects", "skills", "certifications", "languages"],
   })
 }

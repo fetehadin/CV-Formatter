@@ -27,7 +27,7 @@ function PersonalFields() {
   return (
     <div className="flex flex-col gap-4">
       <Row>
-        <TextField label="Full name" value={b.name} onChange={set("name")} placeholder="Abebe Kebede" autoComplete="name" />
+        <TextField label="Full name" value={b.name} onChange={set("name")} placeholder="Fetehadin Negash" autoComplete="name" />
         <TextField label="Headline (optional)" value={b.headline} onChange={set("headline")} placeholder="Frontend Engineer" />
       </Row>
       <Row>
