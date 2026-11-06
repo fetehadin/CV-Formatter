@@ -49,24 +49,21 @@ function move<T>(list: T[], from: number, to: number): T[] {
   return next
 }
 
-export function moveItem<S extends ListSection>(r: Resume, section: S, id: string, delta: -1 | 1): Resume {
+/** Drag and drop: puts the item where `overId` is, shifting the ones in between. */
+export function moveItemTo<S extends ListSection>(r: Resume, section: S, id: string, overId: string): Resume {
   const list = r[section] as Item<S>[]
-  const from = list.findIndex((it) => it.id === id)
-  const next = move(list, from, from + delta)
+  const next = move(list, list.findIndex((it) => it.id === id), list.findIndex((it) => it.id === overId))
   return next === list ? r : setList(r, section, next)
 }
 
-/** Moves a section past its next *visible* neighbour, so hidden sections never make a click look like it did nothing. */
-export function moveSection(r: Resume, key: SectionKey, delta: -1 | 1): Resume {
+/**
+ * Drag and drop for whole sections. Works on the full order, so hidden
+ * sections in between just shift along and the visible order comes out right.
+ */
+export function moveSectionTo(r: Resume, key: SectionKey, overKey: SectionKey): Resume {
   const order = r.sectionOrder
-  const from = order.indexOf(key)
-  let to = from + delta
-  while (to >= 0 && to < order.length && r.design.hidden.includes(order[to])) to += delta
-  if (from === -1 || to < 0 || to >= order.length) return r
-  const next = [...order]
-  next.splice(from, 1)
-  next.splice(to, 0, key)
-  return { ...r, sectionOrder: next }
+  const next = move(order, order.indexOf(key), order.indexOf(overKey))
+  return next === order ? r : { ...r, sectionOrder: next }
 }
 
 /** Shows or hides a section. Its content is kept either way. */

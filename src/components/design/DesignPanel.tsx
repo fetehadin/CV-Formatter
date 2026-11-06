@@ -1,13 +1,14 @@
 import { useId, type ReactNode } from "react"
-import { ArrowDown, ArrowUp, Check, Minimize2, RotateCcw } from "lucide-react"
+import { Check, Minimize2, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 import { TextField } from "@/components/editor/fields"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select"
+import { DragHandle, draggingClass, SortableList, useSortableRow } from "@/components/ui/sortable"
 import { ACCENTS, defaultDesign, PROFILE_INFO, PROFILES, type Profile, FONT_SIZE, FONTS, PAPERS, TEMPLATE_INFO, TEMPLATES, type DateStyle, type Design, type FontId, type Margins, type Paper, type Spacing } from "@/lib/resume/design"
-import { moveSection, setSectionHidden } from "@/lib/resume/edit"
+import { moveSectionTo, setSectionHidden } from "@/lib/resume/edit"
 import { formatYearMonth } from "@/lib/resume/format"
 import { SECTION_LABELS, visibleSections, type SectionKey } from "@/lib/resume/schema"
 import { cn } from "@/lib/utils"
@@ -54,6 +55,24 @@ const SAMPLE_DATE = { month: "Sep", year: "2022" }
 const FONT_SIZES = Array.from({ length: (FONT_SIZE.max - FONT_SIZE.min) / FONT_SIZE.step + 1 }, (_, i) => FONT_SIZE.min + i * FONT_SIZE.step)
 const FONT_GROUPS = ["Sans-serif", "Serif"] as const
 
+/** One section in the Design list: drag to reorder, switch to show or hide. */
+function SectionRow({ section }: { section: SectionKey }) {
+  const { resume, updateResume } = useWorkspace()
+  const row = useSortableRow(section)
+  const shown = !resume.design.hidden.includes(section)
+  const id = `section-toggle-${section}`
+  return (
+    <li ref={row.ref} style={row.style} className={cn("flex items-center gap-2 rounded-lg border bg-card py-1 pr-3 pl-1", !shown && "bg-muted/40", row.isDragging && draggingClass)}>
+      <DragHandle handle={row.handle} label={SECTION_LABELS[section]} />
+      <label htmlFor={id} className={cn("min-w-0 flex-1 truncate text-sm", !shown && "text-muted-foreground line-through")}>
+        {SECTION_LABELS[section]}
+      </label>
+      {!shown && <span className="text-[11px] text-muted-foreground">Not on CV</span>}
+      <Switch id={id} size="sm" checked={shown} aria-label={`Show ${SECTION_LABELS[section]} on this CV`} onCheckedChange={(on) => updateResume((r) => setSectionHidden(r, section, !on))} />
+    </li>
+  )
+}
+
 /**
  * Which sections this CV has, in what order, and the career stage that
  * decides how much each one counts in the score.
@@ -61,7 +80,6 @@ const FONT_GROUPS = ["Sans-serif", "Serif"] as const
 function SectionsPicker() {
   const { resume, updateResume } = useWorkspace()
   const d = resume.design
-  const visible = visibleSections(resume)
 
   const chooseProfile = (profile: Profile) => {
     if (profile === d.profile) return
@@ -82,29 +100,14 @@ function SectionsPicker() {
         options={PROFILES.map((p) => ({ value: p, label: PROFILE_INFO[p].label }))}
       />
       <p className="-mt-1 text-xs text-muted-foreground">{PROFILE_INFO[d.profile].description}</p>
-      <ul className="flex flex-col divide-y rounded-lg border" aria-label="Sections on this CV">
-        {resume.sectionOrder.map((key) => {
-          const shown = !d.hidden.includes(key)
-          const i = visible.indexOf(key)
-          const id = `section-toggle-${key}`
-          return (
-            <li key={key} className={cn("flex items-center gap-2 px-3 py-1.5", !shown && "bg-muted/40")}>
-              <Switch id={id} size="sm" checked={shown} onCheckedChange={(on) => updateResume((r) => setSectionHidden(r, key, !on))} />
-              <label htmlFor={id} className={cn("min-w-0 flex-1 truncate text-sm", !shown && "text-muted-foreground line-through")}>
-                {SECTION_LABELS[key]}
-              </label>
-              {!shown && <span className="text-[11px] text-muted-foreground">Not on CV</span>}
-              <Button variant="ghost" size="icon-xs" aria-label={`Move ${SECTION_LABELS[key]} up`} disabled={!shown || i === 0} onClick={() => updateResume((r) => moveSection(r, key, -1))}>
-                <ArrowUp />
-              </Button>
-              <Button variant="ghost" size="icon-xs" aria-label={`Move ${SECTION_LABELS[key]} down`} disabled={!shown || i === visible.length - 1} onClick={() => updateResume((r) => moveSection(r, key, 1))}>
-                <ArrowDown />
-              </Button>
-            </li>
-          )
-        })}
-      </ul>
-      <p className="text-xs text-muted-foreground">Turn off sections you don't need. Their text is kept, but they leave the PDF and the score, and their points go to the rest.</p>
+      <SortableList ids={resume.sectionOrder} label={(k) => SECTION_LABELS[k]} onMove={(key, over) => updateResume((r) => moveSectionTo(r, key, over))}>
+        <ul className="flex flex-col gap-1.5" aria-label="Sections on this CV">
+          {resume.sectionOrder.map((key) => (
+            <SectionRow key={key} section={key} />
+          ))}
+        </ul>
+      </SortableList>
+      <p className="text-xs text-muted-foreground">Drag to reorder. Turn off sections you don't need. Their text is kept, but they leave the PDF and the score, and their points go to the rest.</p>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { duplicateItem, insertItem, moveItem, moveSection, removeItem, updateItem } from "./edit"
+import { duplicateItem, insertItem, moveItemTo, moveSectionTo, removeItem, updateItem } from "./edit"
 import { cleanBullets, displayUrl, formatRange, isEndBeforeStart, splitList, toHref } from "./format"
 import { migrateV2, toBullets } from "./migrate"
 import { emptyResume, normalizeSectionOrder, parseResume, SECTION_KEYS } from "./schema"
@@ -165,10 +165,12 @@ describe("edit helpers", () => {
     })
   const ids = (r: ReturnType<typeof base>) => r.experience.map((x) => x.id)
 
-  it("moves items and ignores moves past the ends", () => {
-    expect(ids(moveItem(base(), "experience", "a", 1))).toEqual(["b", "a", "c"])
+  it("drops items where the target was, both ways, and ignores no-op drops", () => {
+    expect(ids(moveItemTo(base(), "experience", "a", "c"))).toEqual(["b", "c", "a"])
+    expect(ids(moveItemTo(base(), "experience", "c", "a"))).toEqual(["c", "a", "b"])
     const r = base()
-    expect(moveItem(r, "experience", "a", -1)).toBe(r)
+    expect(moveItemTo(r, "experience", "a", "a")).toBe(r)
+    expect(moveItemTo(r, "experience", "a", "missing")).toBe(r)
   })
 
   it("duplicates right after the original with a new id", () => {
@@ -190,7 +192,14 @@ describe("edit helpers", () => {
   })
 
   it("moves whole sections", () => {
-    const r = moveSection(base(), "experience", -1)
+    const r = moveSectionTo(base(), "experience", "summary")
     expect(r.sectionOrder.slice(0, 2)).toEqual(["experience", "summary"])
+  })
+
+  it("keeps the visible order right when hidden sections sit in between", () => {
+    const r = parseResume({ sectionOrder: ["summary", "certifications", "experience", "skills"], design: { hidden: ["certifications"] } })
+    const visible = (x: typeof r) => x.sectionOrder.filter((k) => !x.design.hidden.includes(k))
+    expect(visible(moveSectionTo(r, "summary", "experience")).slice(0, 3)).toEqual(["experience", "summary", "skills"])
+    expect(visible(moveSectionTo(r, "skills", "summary")).slice(0, 3)).toEqual(["skills", "summary", "experience"])
   })
 })

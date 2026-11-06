@@ -1,12 +1,14 @@
 import { useEffect, useId, useState, type ReactNode } from "react"
-import { ArrowDown, ArrowUp, EyeOff } from "lucide-react"
+import { EyeOff } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
-import { moveSection, setSectionHidden } from "@/lib/resume/edit"
+import { DragHandle, draggingClass, SortableList, useSortableRow } from "@/components/ui/sortable"
+import { moveSectionTo, setSectionHidden } from "@/lib/resume/edit"
 import { formatRange } from "@/lib/resume/format"
+import { cn } from "@/lib/utils"
 import { SECTION_LABELS, visibleSections, type Basics, type Resume, type SectionKey } from "@/lib/resume/schema"
 import { DraftSummary } from "@/components/ai/AiAssist"
 import { useEditorNav } from "@/state/editor-nav"
@@ -180,6 +182,39 @@ function count(r: Resume, key: SectionKey): number {
   return r[key].length
 }
 
+/** One CV section in the editor: drag it by the grip to reorder, or take it off this CV. */
+function SectionCard({ section }: { section: SectionKey }) {
+  const { resume, updateResume } = useWorkspace()
+  const row = useSortableRow(section)
+  const n = count(resume, section)
+  const label = SECTION_LABELS[section]
+  return (
+    <AccordionItem ref={row.ref} style={row.style} id={`section-${section}`} value={section} className={cn("scroll-mt-4 rounded-xl border bg-card pr-4 pl-1.5", row.isDragging && draggingClass)}>
+      <div className="flex items-center gap-1">
+        <DragHandle handle={row.handle} label={label} />
+        <div className="min-w-0 flex-1">
+          <AccordionTrigger className="items-center py-4 text-base font-semibold hover:no-underline">
+            <span className="flex items-center gap-2">
+              {label}
+              {n > 0 && section !== "summary" && (
+                <Badge variant="secondary" className="tabular-nums">
+                  {n}
+                </Badge>
+              )}
+            </span>
+          </AccordionTrigger>
+        </div>
+        <Button variant="ghost" size="icon-sm" aria-label={`Remove ${label} from this CV`} title="Remove from this CV (your text is kept)" onClick={() => updateResume((r) => setSectionHidden(r, section, true))}>
+          <EyeOff />
+        </Button>
+      </div>
+      <AccordionContent className="pb-5 pl-2.5">
+        <SectionFields section={section} />
+      </AccordionContent>
+    </AccordionItem>
+  )
+}
+
 export function Editor() {
   const { resume, updateResume } = useWorkspace()
   const order = visibleSections(resume)
@@ -206,45 +241,11 @@ export function Editor() {
         </AccordionContent>
       </AccordionItem>
 
-      {order.map((key, index) => {
-        const n = count(resume, key)
-        return (
-          <AccordionItem key={key} id={`section-${key}`} value={key} className="scroll-mt-4 rounded-xl border bg-card px-4">
-            <div className="flex items-center gap-1">
-              <div className="min-w-0 flex-1">
-                <AccordionTrigger className="items-center py-4 text-base font-semibold hover:no-underline">
-                  <span className="flex items-center gap-2">
-                    {SECTION_LABELS[key]}
-                    {n > 0 && key !== "summary" && (
-                      <Badge variant="secondary" className="tabular-nums">
-                        {n}
-                      </Badge>
-                    )}
-                  </span>
-                </AccordionTrigger>
-              </div>
-              <Button variant="ghost" size="icon-sm" aria-label={`Move ${SECTION_LABELS[key]} section up`} disabled={index === 0} onClick={() => updateResume((r) => moveSection(r, key, -1))}>
-                <ArrowUp />
-              </Button>
-              <Button variant="ghost" size="icon-sm" aria-label={`Move ${SECTION_LABELS[key]} section down`} disabled={index === order.length - 1} onClick={() => updateResume((r) => moveSection(r, key, 1))}>
-                <ArrowDown />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={`Remove ${SECTION_LABELS[key]} from this CV`}
-                title="Remove from this CV (your text is kept)"
-                onClick={() => updateResume((r) => setSectionHidden(r, key, true))}
-              >
-                <EyeOff />
-              </Button>
-            </div>
-            <AccordionContent className="pb-5">
-              <SectionFields section={key} />
-            </AccordionContent>
-          </AccordionItem>
-        )
-      })}
+      <SortableList ids={order} label={(k) => SECTION_LABELS[k]} onMove={(key, over) => updateResume((r) => moveSectionTo(r, key, over))}>
+        {order.map((key) => (
+          <SectionCard key={key} section={key} />
+        ))}
+      </SortableList>
       {hidden.length > 0 && (
         <p className="px-1 text-xs text-muted-foreground">
           Not on this CV: {hidden.map((k) => SECTION_LABELS[k]).join(", ")}.{" "}
